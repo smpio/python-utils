@@ -7,7 +7,7 @@ import smp
 from utils.log_config import get_logging_config
 
 
-def init(settings_module_name, **env_scheme):
+def init(settings_module_name, enable_database=True, **env_scheme):
     app_name, settings, env = _prepare(settings_module_name, env_scheme)
 
     dev_env = env('DEV_ENV')
@@ -34,15 +34,16 @@ def init(settings_module_name, **env_scheme):
 
     # Databases
     settings.DATABASES = {}
-    if env('DATABASE_URL'):
-        settings.DATABASES['default'] = env.db_url('DATABASE_URL')
-    if env('RO_DATABASE_URL'):
-        settings.DATABASES['readonly'] = env.db_url('RO_DATABASE_URL')
-        settings.DATABASES['readonly']['TEST'] = {
-            'MIRROR': 'default',
-        }
-    for db in settings.DATABASES.values():
-        db['ATOMIC_REQUESTS'] = True
+    if enable_database:
+        if env('DATABASE_URL'):
+            settings.DATABASES['default'] = env.db_url('DATABASE_URL')
+        if env('RO_DATABASE_URL'):
+            settings.DATABASES['readonly'] = env.db_url('RO_DATABASE_URL')
+            settings.DATABASES['readonly']['TEST'] = {
+                'MIRROR': 'default',
+            }
+        for db in settings.DATABASES.values():
+            db['ATOMIC_REQUESTS'] = True
 
     # Caches
     settings.CACHES = {
