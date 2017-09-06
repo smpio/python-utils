@@ -1,14 +1,14 @@
 import contextlib
 
-from jsonschema import ValidationError
-from jsonschema import Draft4Validator
-
-from . import exceptions
+from . import exceptions, ApiRequest, DEFAULT_TIMEOUT
 
 
-class JsonResponseMixin(object):
+class JsonResponseMixin:
     def clean_response(self, response, request):
-        super(JsonResponseMixin, self).clean_response(response, request)
+        from jsonschema import ValidationError
+        from jsonschema import Draft4Validator
+
+        super().clean_response(response, request)
         try:
             result = response.json()
         except ValueError as e:
@@ -27,7 +27,7 @@ class JsonResponseMixin(object):
         return result
 
 
-class RateLimitMixin(object):
+class RateLimitMixin:
     rate_limits = []
 
     def _request_once(self, *args, **kwargs):
@@ -41,4 +41,21 @@ class RateLimitMixin(object):
         with contextlib.ExitStack() as stack:
             for ctx in ctx_managers:
                 stack.enter_context(ctx)
-            return super(RateLimitMixin, self)._request_once(*args, **kwargs)
+            return super()._request_once(*args, **kwargs)
+
+
+class HelperMethodsMixin:
+    @classmethod
+    def _add_method(cls, name):
+        name_upper = name.upper()
+
+        def method(self, path, timeout=DEFAULT_TIMEOUT, **kwargs):
+            request = ApiRequest(name_upper, path, **kwargs)
+            return self.request(request, timeout=timeout)
+
+        method.__name__ = method_name
+        setattr(cls, name, method)
+
+
+for method_name in ('get', 'post', 'put', 'delete', 'patch'):
+    HelperMethodsMixin._add_method(method_name)
