@@ -25,7 +25,6 @@ def init(settings_module_name, enable_database=True, **env_scheme):
         app_name + '.App',
     ]
     settings.MIDDLEWARE = [
-        'corsheaders.middleware.CorsMiddleware',        # TODO: move to nginx
     ]
     settings.APPEND_SLASH = False
     settings.ROOT_URLCONF = app_name + '.urls'
@@ -100,17 +99,6 @@ def init(settings_module_name, enable_database=True, **env_scheme):
             'release': settings.BUILD_ID,
             'environment': env('ENVIRONMENT_NAME'),
         }
-
-    # CORS
-    # TODO: prevent CSRF!
-    try:
-        from corsheaders.defaults import default_headers
-        settings.CORS_ORIGIN_ALLOW_ALL = True
-        settings.CORS_ALLOW_HEADERS = default_headers + (
-            'x-timestamp',
-        )
-    except ImportError:
-        pass
 
     # DRF Swagger
     settings.SWAGGER_SETTINGS = {
