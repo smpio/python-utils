@@ -44,18 +44,25 @@ class RateLimitMixin:
             return super()._request_once(*args, **kwargs)
 
 
-class HelperMethodsMixin:
-    @classmethod
-    def _add_method(cls, name):
-        name_upper = name.upper()
+class HelperMethodsMixinMetaclass(type):
+    def __new__(mcs, *args, **kwargs):
+        klass = super().__new__(mcs, *args, **kwargs)
 
-        def method(self, path, timeout=DEFAULT_TIMEOUT, **kwargs):
-            request = ApiRequest(name_upper, path, **kwargs)
-            return self.request(request, timeout=timeout)
+        def add_method(name):
+            name_upper = name.upper()
 
-        method.__name__ = method_name
-        setattr(cls, name, method)
+            def method(self, path, timeout=DEFAULT_TIMEOUT, **kwargs):
+                request = klass.request_class(name_upper, path, **kwargs)
+                return self.request(request, timeout=timeout)
+
+            method.__name__ = method_name
+            setattr(klass, name, method)
+
+        for method_name in ('get', 'post', 'put', 'delete', 'patch'):
+            add_method(method_name)
+
+        return klass
 
 
-for method_name in ('get', 'post', 'put', 'delete', 'patch'):
-    HelperMethodsMixin._add_method(method_name)
+class HelperMethodsMixin(metaclass=HelperMethodsMixinMetaclass):
+    request_class = ApiRequest

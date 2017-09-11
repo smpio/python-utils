@@ -1,7 +1,8 @@
 import time
 import logging
+import urllib.parse
+
 import requests
-from six.moves import urllib
 
 from .exceptions import ApiClientError, ApiServerError
 
@@ -11,8 +12,8 @@ DEFAULT_TIMEOUT = object()
 
 
 class BaseApiClientMetaclass(type):
-    def __new__(mcs, name, bases, attrs):
-        klass = super(BaseApiClientMetaclass, mcs).__new__(mcs, name, bases, attrs)
+    def __new__(mcs, *args, **kwargs):
+        klass = super().__new__(mcs, *args, **kwargs)
 
         class ClientError(ApiClientError):
             client_class = klass
