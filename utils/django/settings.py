@@ -8,9 +8,42 @@ from utils.log_config import get_logging_config
 
 
 def init(settings_module_name, enable_database=True, **env_scheme):
-    project_name, settings, env = _prepare(settings_module_name, env_scheme)
+    project_name = settings_module_name.rsplit('.', 1)[0]
+    settings = sys.modules[project_name + '.settings']
+
+    env = environ.Env(
+        DEV_ENV=(bool, True),
+        CONTAINER_ENV=(bool, False),
+        SECRET_KEY=str,
+        DATABASE_URL=(str, 'postgres://postgres@postgres/postgres'),
+        RO_DATABASE_URL=(str, None),
+        CACHE_URL=(str, 'redis://redis/0'),
+        EMAIL_URL=(str, None),
+        LOGGING=(str, 'console'),
+        SQL_LOGGING=(bool, False),
+        CELERY_BROKER_URL=(str, 'redis://redis/1'),
+        CELERY_RESULT_BACKEND_URL=(str, 'redis://redis/2'),
+        BUILD_ID=(str, None),
+        SENTRY_DSN=(str, None),
+        ENVIRONMENT_NAME=str,
+        SMP_BASE_URL=(str, 'https://api.smp.io/'),
+        **env_scheme,
+    )
 
     dev_env = env('DEV_ENV')
+
+    if dev_env:
+        env.scheme['SECRET_KEY'] = (str, 'dev')
+        env.scheme['SQL_LOGGING'] = (str, True)
+        env.scheme['ENVIRONMENT_NAME'] = (str, 'dev')
+        env.scheme['SMP_BASE_URL'] = (str, 'http://localhost:7000/')
+
+        if env('CONTAINER_ENV'):
+            env.scheme['DATABASE_URL'] = (str, 'postgres://postgres@postgres/{0}'.format(project_name))
+        else:
+            env.scheme['DATABASE_URL'] = (str, 'postgres://postgres@localhost/{0}'.format(project_name))
+            for setting_name in ('CACHE_URL', 'CELERY_BROKER_URL', 'CELERY_RESULT_BACKEND_URL'):
+                env.scheme[setting_name] = (str, env.scheme[setting_name][1].replace('//redis', '//localhost'))
 
     # Debugging
     settings.DEBUG = dev_env
@@ -135,43 +168,3 @@ def init(settings_module_name, enable_database=True, **env_scheme):
         setattr(settings, name, env(name))
 
     return env, settings
-
-
-# TODO: merge to init()
-def _prepare(settings_module_name, env_scheme):
-    project_name = settings_module_name.rsplit('.', 1)[0]
-    settings = sys.modules[project_name + '.settings']
-
-    env = environ.Env(
-        DEV_ENV=(bool, True),
-        CONTAINER_ENV=(bool, False),
-        SECRET_KEY=str,
-        DATABASE_URL=(str, 'postgres://postgres@postgres/postgres'),
-        RO_DATABASE_URL=(str, None),
-        CACHE_URL=(str, 'redis://redis/0'),
-        EMAIL_URL=(str, None),
-        LOGGING=(str, 'console'),
-        SQL_LOGGING=(bool, False),
-        CELERY_BROKER_URL=(str, 'redis://redis/1'),
-        CELERY_RESULT_BACKEND_URL=(str, 'redis://redis/2'),
-        BUILD_ID=(str, None),
-        SENTRY_DSN=(str, None),
-        ENVIRONMENT_NAME=str,
-        SMP_BASE_URL=(str, 'https://api.smp.io/'),
-        **env_scheme,
-    )
-
-    if env('DEV_ENV'):
-        env.scheme['SECRET_KEY'] = (str, 'dev')
-        env.scheme['SQL_LOGGING'] = (str, True)
-        env.scheme['ENVIRONMENT_NAME'] = (str, 'dev')
-        env.scheme['SMP_BASE_URL'] = (str, 'http://localhost:7000/')
-
-        if env('CONTAINER_ENV'):
-            env.scheme['DATABASE_URL'] = (str, 'postgres://postgres@postgres/{0}'.format(project_name))
-        else:
-            env.scheme['DATABASE_URL'] = (str, 'postgres://postgres@localhost/{0}'.format(project_name))
-            for setting_name in ('CACHE_URL', 'CELERY_BROKER_URL', 'CELERY_RESULT_BACKEND_URL'):
-                env.scheme[setting_name] = (str, env.scheme[setting_name][1].replace('//redis', '//localhost'))
-
-    return project_name, settings, env
