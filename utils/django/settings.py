@@ -8,7 +8,7 @@ from utils.log_config import get_logging_config
 
 
 def init(settings_module_name, enable_database=True, **env_scheme):
-    app_name, settings, env = _prepare(settings_module_name, env_scheme)
+    project_name, settings, env = _prepare(settings_module_name, env_scheme)
 
     dev_env = env('DEV_ENV')
 
@@ -22,13 +22,13 @@ def init(settings_module_name, enable_database=True, **env_scheme):
 
     # General
     settings.INSTALLED_APPS = [
-        app_name + '.App',
+        project_name + '.App',
     ]
     settings.MIDDLEWARE = [
     ]
     settings.APPEND_SLASH = False
-    settings.ROOT_URLCONF = app_name + '.urls'
-    settings.WSGI_APPLICATION = app_name + '.wsgi.application'
+    settings.ROOT_URLCONF = project_name + '.urls'
+    settings.WSGI_APPLICATION = project_name + '.wsgi.application'
     settings.AUTHENTICATION_BACKENDS = []
 
     # Databases
@@ -105,60 +105,42 @@ def init(settings_module_name, enable_database=True, **env_scheme):
         'USE_SESSION_AUTH': False,
     }
 
+    # Celery
+    if env('CELERY_BROKER_URL'):
+        settings.CELERY_BROKER_URL = env('CELERY_BROKER_URL')
+    if env('CELERY_RESULT_BACKEND_URL'):
+        settings.CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND_URL')
+    settings.CELERY_TIMEZONE = settings.TIME_ZONE
+    settings.CELERY_WORKER_REDIRECT_STDOUTS = False
+    settings.CELERY_WORKER_HIJACK_ROOT_LOGGER = False
+    settings.CELERY_WORKER_MAX_TASKS_PER_CHILD = 100
+    settings.CELERY_WORKER_CONCURRENCY = 1
+    settings.CELERY_TASK_CLEANUP_TIMEOUT = 10   # this is custom setting (not related to celery)
+    settings.CELERY_TASK_SOFT_TIME_LIMIT = 5 * 60
+    settings.CELERY_TASK_TIME_LIMIT = settings.CELERY_TASK_SOFT_TIME_LIMIT + settings.CELERY_TASK_CLEANUP_TIMEOUT
+    settings.CELERY_TASK_DEFAULT_QUEUE = 'default'
+    settings.CELERY_TASK_CREATE_MISSING_QUEUES = False
+
     # SMP
     smp.SmpApiClient.base_url = env('SMP_BASE_URL')
     if dev_env:
         smp.SmpApiClient.default_timeout = None
         smp.SmpApiClient.max_tries = 1
 
-    # Component custom
+    # Custom
+    settings.PROJECT_NAME = project_name
+
+    # Project custom
     for name in env_scheme.keys():
         setattr(settings, name, env(name))
 
     return env, settings
 
 
-def init_celery(settings_module_name, queues=('default',), routes=None, priorities=None, schedule=None):
-    from kombu import Queue, Exchange
-
-    app_name, settings, env = _prepare(settings_module_name, {})
-
-    if env('CELERY_BROKER_URL'):
-        settings.CELERY_BROKER_URL = env('CELERY_BROKER_URL')
-
-    if env('CELERY_RESULT_BACKEND_URL'):
-        settings.CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND_URL')
-
-    settings.CELERY_WORKER_DIRECT = True
-    settings.CELERY_TIMEZONE = settings.TIME_ZONE
-    settings.CELERY_WORKER_REDIRECT_STDOUTS = False
-    settings.CELERY_WORKER_HIJACK_ROOT_LOGGER = False
-    settings.CELERY_WORKER_MAX_TASKS_PER_CHILD = 100
-    settings.CELERY_TASK_CLEANUP_TIMEOUT = 10   # this is custom setting (not related to celery)
-    settings.CELERY_TASK_SOFT_TIME_LIMIT = 5 * 60
-    settings.CELERY_TASK_TIME_LIMIT = settings.CELERY_TASK_SOFT_TIME_LIMIT + settings.CELERY_TASK_CLEANUP_TIMEOUT
-    settings.CELERY_TASK_DEFAULT_QUEUE = 'default'
-    settings.CELERY_TASK_CREATE_MISSING_QUEUES = False
-    settings.CELERY_TASK_QUEUES = [Queue(name, Exchange(name), routing_key=name) for name in queues]
-
-    if routes is not None:
-        settings.CELERY_TASK_ROUTES = routes
-
-    if priorities is not None:
-        # Celery Redis transport has priorities 0, 3, 6, 9 by default.
-        # It's possible to change this granularity by setting
-        # CELERY_BROKER_TRANSPORT_OPTIONS = {priority_steps': list(range(10)),}
-        settings.CELERY_TASK_ANNOTATIONS = {
-            task_name: {'priority': pri} for task_name, pri in priorities.items()
-        }
-
-    if schedule is not None:
-        settings.CELERY_BEAT_SCHEDULE = schedule
-
-
+# TODO: merge to init()
 def _prepare(settings_module_name, env_scheme):
-    app_name = settings_module_name.rsplit('.', 1)[0]
-    settings = sys.modules[app_name + '.settings']
+    project_name = settings_module_name.rsplit('.', 1)[0]
+    settings = sys.modules[project_name + '.settings']
 
     env = environ.Env(
         DEV_ENV=(bool, True),
@@ -186,10 +168,10 @@ def _prepare(settings_module_name, env_scheme):
         env.scheme['SMP_BASE_URL'] = (str, 'http://localhost:7000/')
 
         if env('CONTAINER_ENV'):
-            env.scheme['DATABASE_URL'] = (str, 'postgres://postgres@postgres/{0}'.format(app_name))
+            env.scheme['DATABASE_URL'] = (str, 'postgres://postgres@postgres/{0}'.format(project_name))
         else:
-            env.scheme['DATABASE_URL'] = (str, 'postgres://postgres@localhost/{0}'.format(app_name))
+            env.scheme['DATABASE_URL'] = (str, 'postgres://postgres@localhost/{0}'.format(project_name))
             for setting_name in ('CACHE_URL', 'CELERY_BROKER_URL', 'CELERY_RESULT_BACKEND_URL'):
                 env.scheme[setting_name] = (str, env.scheme[setting_name][1].replace('//redis', '//localhost'))
 
-    return app_name, settings, env
+    return project_name, settings, env
