@@ -62,7 +62,6 @@ def init(settings_module_name, enable_database=True, **env_scheme):
     settings.APPEND_SLASH = False
     settings.ROOT_URLCONF = project_name + '.urls'
     settings.WSGI_APPLICATION = project_name + '.wsgi.application'
-    settings.AUTHENTICATION_BACKENDS = []
 
     # Databases
     settings.DATABASES = {}
@@ -112,8 +111,6 @@ def init(settings_module_name, enable_database=True, **env_scheme):
             'rest_framework.renderers.JSONRenderer',
         ),
         'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
-        'UNAUTHENTICATED_USER': None,
-        # TODO: NUM_PROXIES
     }
 
     # Site wide
