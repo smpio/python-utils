@@ -5,6 +5,11 @@ from rest_framework.serializers import ChoiceField
 class ChoiceDisplayField(ChoiceField):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        names = self.choices.values()
+        if len(names) != len(set(names)):
+            raise ValueError('ChoiceDisplayField has duplicate labels')
+
         self.choice_names_to_values = {
             name: value for value, name in self.choices.items()
         }
