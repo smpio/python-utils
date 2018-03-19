@@ -1,3 +1,4 @@
+from rest_framework.serializers import CharField
 from rest_framework.serializers import ChoiceField
 
 
@@ -21,3 +22,8 @@ class ChoiceDisplayField(ChoiceField):
         if value in ('', None):
             return value
         return self.choices[value]
+
+
+class PasswordField(CharField):
+    def to_representation(self, value):
+        return '*' * 6
