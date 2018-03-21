@@ -103,10 +103,6 @@ def init(settings_module_name, enable_database=True, **env_scheme):
 
     # REST Framework
     settings.REST_FRAMEWORK = {
-        # 'DEFAULT_FILTER_BACKENDS': (
-        #     'django_filters.rest_framework.DjangoFilterBackend',
-        #     'rest_framework.filters.OrderingFilter',
-        # ),
         'DEFAULT_RENDERER_CLASSES': (
             'rest_framework.renderers.JSONRenderer',
         ),
