@@ -1,4 +1,4 @@
-from rest_framework import generics
+from rest_framework import views
 from rest_framework import permissions
 from rest_framework.response import Response
 from django.contrib.auth import login
@@ -6,16 +6,15 @@ from django.contrib.auth import login
 from utils.django.auth.serializers import LoginSerializer
 
 
-class LoginView(generics.GenericAPIView):
+class LoginView(views.APIView):
     """
     Login to the site
     """
-    serializer_class = LoginSerializer
     user_serializer_class = None
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
-        serializer = self.get_serializer(data=request.data)
+        serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data
         login(request, user)
