@@ -1,5 +1,8 @@
 import copy
 
+level_NOTSET = {
+    'level': 'NOTSET'
+}
 
 level_INFO = {
     'level': 'INFO'
@@ -15,7 +18,7 @@ formatters_config = {
         'format': '%(name)s %(levelname)s %(message)s'
     },
     'syslog': {
-        'format': 'django %(levelname)s %(processName)s %(threadName)s %(name)s  %(message)s',
+        'format': 'python %(levelname)s %(processName)s %(threadName)s %(name)s  %(message)s',
     },
     'message': {
         'format': '%(message)s'
@@ -52,9 +55,14 @@ base_config = {
         },
         'py.warnings': {
         },
-        'django': {
-            'level': 'NOTSET',
-        },
+        'django':
+            level_NOTSET,
+        'celery':
+            level_INFO,
+        'kombu':
+            level_INFO,
+        'amqp':
+            level_INFO,
     },
 }
 
