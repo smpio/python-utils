@@ -7,7 +7,7 @@ class LoginSerializer(serializers.Serializer):
     username_field = get_user_model().USERNAME_FIELD
 
     def __init__(self, *args, **kwargs):
-        super(LoginSerializer, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.fields[self.username_field] = serializers.CharField()
         self.fields['password'] = serializers.CharField()
 

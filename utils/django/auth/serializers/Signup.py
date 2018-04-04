@@ -10,5 +10,5 @@ class SignupSerializer(PasswordMixin, serializers.ModelSerializer):
         fields = (model.USERNAME_FIELD, 'password',) + tuple(get_user_model().REQUIRED_FIELDS)
 
     def __init__(self, *args, **kwargs):
-        super(SignupSerializer, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.fields['password'].required = False

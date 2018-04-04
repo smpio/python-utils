@@ -39,9 +39,9 @@ def init(settings_module_name, enable_database=True, **env_scheme):
         env.scheme['SMP_BASE_URL'] = (str, 'http://localhost:7000/')
 
         if env('CONTAINER_ENV'):
-            env.scheme['DATABASE_URL'] = (str, 'postgres://postgres@postgres/{0}'.format(project_name))
+            env.scheme['DATABASE_URL'] = (str, f'postgres://postgres@postgres/{project_name}')
         else:
-            env.scheme['DATABASE_URL'] = (str, 'postgres://postgres@localhost/{0}'.format(project_name))
+            env.scheme['DATABASE_URL'] = (str, f'postgres://postgres@localhost/{project_name}')
             for setting_name in ('CACHE_URL', 'CELERY_BROKER_URL', 'CELERY_RESULT_BACKEND_URL'):
                 env.scheme[setting_name] = (str, env.scheme[setting_name][1].replace('//redis', '//localhost'))
 

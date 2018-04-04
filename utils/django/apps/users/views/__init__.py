@@ -1,4 +1,6 @@
-from .Login import LoginView  # noqa
-from .Logout import LogoutView  # noqa
-from .Me import MeView  # noqa
-from .Signup import SignupView  # noqa
+# flake8: noqa: F401
+
+from .Login import LoginView
+from .Logout import LogoutView
+from .Me import MeView
+from .Signup import SignupView

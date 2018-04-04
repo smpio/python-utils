@@ -17,7 +17,7 @@ def log_context(**kwargs):
                 pass
 
 
-class SetContext(object):
+class SetContext:
     @staticmethod
     def filter(record):
         record.__dict__.update(_context.__dict__)

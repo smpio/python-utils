@@ -63,7 +63,7 @@ def get_long_lock(lockname, retry_times=1, retry_delay=200):
 
 class LongLockUpdateThread(threading.Thread):
     def __init__(self, lock):
-        super(LongLockUpdateThread, self).__init__(daemon=True)
+        super().__init__(daemon=True)
         self.lock = lock
         self.do_loop = True
 
@@ -100,7 +100,7 @@ def get_long_lock_function(name_prefix, name_separator=':'):
     return func
 
 
-class DistributedRateLimiter(object):
+class DistributedRateLimiter:
     """
     Allows you to run some code at specified rate.
     Usable only for high rates (> 1 Hz), because it blocks current thread.
@@ -162,10 +162,10 @@ class DistributedRateLimiter(object):
 
     def wait(self, key=None):
         if key:
-            redis_key = 'last:%s:%s' % (self.name, key)
+            redis_key = f'last:{self.name}:{key}'
             log.debug('Requesting %s time frame for key %s...', self.name, key)
         else:
-            redis_key = 'last:%s' % self.name
+            redis_key = f'last:{self.name}'
             log.debug('Requesting %s time frame...', self.name)
 
         redis_time = float('%d.%06d' % self._client.time())
@@ -182,7 +182,7 @@ class DistributedRateLimiter(object):
             log.debug('Continue without delay')
 
 
-class LockingRateLimiter(object):
+class LockingRateLimiter:
     def __init__(self, max_rate_hz, name):
         self.max_rate_hz = max_rate_hz
         self.name = name
@@ -207,7 +207,7 @@ class DistributedLockingRateLimiter(LockingRateLimiter):
 
     def __init__(self, max_rate_hz, name, timeout=60, redis_client=None):
         self._max_rate = self._min_delay = 0
-        super(DistributedLockingRateLimiter, self).__init__(max_rate_hz, name)
+        super().__init__(max_rate_hz, name)
         self.timeout = timeout
 
         if redis_client is None:
@@ -231,9 +231,9 @@ class DistributedLockingRateLimiter(LockingRateLimiter):
     @contextmanager
     def get_time_frame(self, key=None):
         if key:
-            lock_key = 'lock:%s:%s' % (self.name, key)
+            lock_key = f'lock:{self.name}:{key}'
         else:
-            lock_key = 'lock:%s' % self.name
+            lock_key = f'lock:{self.name}'
         lock_key = cache.make_key(lock_key)
         log.debug('Requesting %s time frame...', lock_key)
 

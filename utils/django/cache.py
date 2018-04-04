@@ -1,7 +1,7 @@
 from django.core.cache import caches, DEFAULT_CACHE_ALIAS
 
 
-class TypedCache(object):
+class TypedCache:
     _single_key_methods = (
         'add',
         'get',
@@ -23,7 +23,7 @@ class TypedCache(object):
     )
 
     def __init__(self, app_label, object_type, alias=DEFAULT_CACHE_ALIAS):
-        self.key_prefix = '{}:{}:'.format(app_label, object_type)
+        self.key_prefix = f'{app_label}:{object_type}:'
         self.cache = caches[alias]
 
     def make_key(self, key):
