@@ -1,16 +1,20 @@
+# TODO: refactor, remove django dependency
+
 import time
 import logging
 import itertools
+import threading
+from redlock import RedLock
 from contextlib import contextmanager
+from django.core.cache import cache
 
 log = logging.getLogger(__name__)
 DEFAULT_TIMEOUT = 300
+long_lock_ttl = 30
 
 
 @contextmanager
 def get_lock(lockname, timeout=DEFAULT_TIMEOUT, retry_times=1, retry_delay=200):
-    from redlock import RedLock
-
     try:
         from django_redis import get_redis_connection
     except ImportError:
@@ -32,6 +36,49 @@ def get_lock(lockname, timeout=DEFAULT_TIMEOUT, retry_times=1, retry_delay=200):
             lock.release()
 
 
+@contextmanager
+def get_long_lock(lockname, retry_times=1, retry_delay=200):
+    try:
+        from django_redis import get_redis_connection
+    except ImportError:
+        raise Exception("Can't get default Redis connection")
+    else:
+        redis_client = get_redis_connection()
+
+    ttl = int(long_lock_ttl * 1000)
+    lock = RedLock(lockname, [redis_client], retry_times=retry_times, retry_delay=retry_delay, ttl=ttl)
+    got_lock = lock.acquire()
+
+    if got_lock:
+        thread = LongLockUpdateThread(lock)
+        thread.start()
+
+    try:
+        yield got_lock
+    finally:
+        if got_lock:
+            lock.release()
+            thread.stop()
+
+
+class LongLockUpdateThread(threading.Thread):
+    def __init__(self, lock):
+        super(LongLockUpdateThread, self).__init__(daemon=True)
+        self.lock = lock
+        self.do_loop = True
+
+    def stop(self):
+        self.do_loop = False
+
+    def run(self):
+        delay = self.lock.ttl * 0.5 / 1000
+
+        while self.do_loop:
+            for node in self.lock.redis_nodes:
+                node.set(self.lock.resource, self.lock.lock_key, px=self.lock.ttl)
+            time.sleep(delay)
+
+
 def get_lock_function(name_prefix, default_timeout=None, name_separator=':'):
     @contextmanager
     def func(*name_parts, **kwargs):
@@ -39,6 +86,16 @@ def get_lock_function(name_prefix, default_timeout=None, name_separator=':'):
         name_parts = itertools.chain((name_prefix,), name_parts)
         lockname = name_separator.join(str(part) for part in name_parts)
         with get_lock(lockname, timeout=timeout) as lock:
+            yield lock
+    return func
+
+
+def get_long_lock_function(name_prefix, name_separator=':'):
+    @contextmanager
+    def func(*name_parts, **kwargs):
+        name_parts = itertools.chain((name_prefix,), name_parts)
+        lockname = name_separator.join(str(part) for part in name_parts)
+        with get_long_lock(lockname) as lock:
             yield lock
     return func
 
@@ -173,9 +230,6 @@ class DistributedLockingRateLimiter(LockingRateLimiter):
 
     @contextmanager
     def get_time_frame(self, key=None):
-        # TODO: allow to use another cache
-        from django.core.cache import cache
-
         if key:
             lock_key = 'lock:%s:%s' % (self.name, key)
         else:
