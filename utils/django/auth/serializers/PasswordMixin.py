@@ -1,12 +1,13 @@
 from django.contrib.auth import password_validation
+
 from utils.django.serializers.fields import PasswordField
 
 
-class PasswordMixin(object):
+class PasswordMixin:
     password = PasswordField()
 
     def validate(self, attrs):
-        attrs = super(PasswordMixin, self).validate(attrs)
+        attrs = super().validate(attrs)
         if 'password' in attrs:
             ModelClass = self.Meta.model
             user = ModelClass(**attrs)

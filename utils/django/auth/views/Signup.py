@@ -15,7 +15,7 @@ class SignupView(generics.CreateAPIView):
     do_login = True
 
     def post(self, request, *args, **kwargs):
-        self.default_response = super(SignupView, self).post(request, *args, **kwargs)
+        self.default_response = super().post(request, *args, **kwargs)
         if hasattr(self, 'user') and hasattr(self, 'serializer'):
             return self.get_success_response(self.user, self.serializer)
         return self.default_response
