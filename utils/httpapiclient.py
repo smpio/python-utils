@@ -4,7 +4,9 @@ from utils.lock import DistributedLockingRateLimiter
 
 
 class RateLimitMixin:
-    rate_limits = []
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.rate_limits = []
 
     def _request_once(self, *args, **kwargs):
         # TODO: optimize
