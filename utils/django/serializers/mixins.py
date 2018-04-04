@@ -17,7 +17,12 @@ class WriteOnceFieldsMixin:
     def get_extra_kwargs(self):
         extra_kwargs = super().get_extra_kwargs()
 
-        if self.context['request'].view.action != 'create':
+        try:
+            action = self.context['view'].action
+        except KeyError:
+            return extra_kwargs
+
+        if action != 'create':
             write_once_fields = getattr(self.Meta, 'write_once_fields', [])
             for field_name in write_once_fields:
                 kwargs = extra_kwargs.get(field_name, {})
