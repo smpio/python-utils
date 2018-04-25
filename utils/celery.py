@@ -14,7 +14,7 @@ class LogContextMixin:
             return super().__call__(*args, **kwargs)
 
 
-class TimeClaimingMixin:
+class TimeLimitPropertiesMixin:
     @property
     def effective_soft_time_limit(self):
         if self.request.called_directly:
@@ -69,6 +69,8 @@ class TimeClaimingMixin:
             return soft
         return min(soft, hard)
 
+
+class TimeClaimingMixin(TimeLimitPropertiesMixin):
     def claim_time_limit(self, time_limit):
         current = self.effective_time_limit
         if current is not None and time_limit > current:
