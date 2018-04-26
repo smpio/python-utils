@@ -1,5 +1,4 @@
-from django_filters import ChoiceFilter, TypedChoiceFilter
-from django_filters.rest_framework import DjangoFilterBackend, FilterSet
+from django_filters.rest_framework import *
 
 
 class ChoiceDisplayFilter(TypedChoiceFilter):
@@ -19,7 +18,7 @@ class ChoiceDisplayFilter(TypedChoiceFilter):
         return self.choice_names_to_values.get(name)
 
 
-class ExtendedFilterSet(FilterSet):
+class FilterSet(FilterSet):
     @classmethod
     def filter_for_lookup(cls, f, lookup_type):
         filter_class, params = super().filter_for_lookup(f, lookup_type)
@@ -31,4 +30,4 @@ class ExtendedFilterSet(FilterSet):
 
 
 class FilterBackend(DjangoFilterBackend):
-    default_filter_set = ExtendedFilterSet
+    default_filter_set = FilterSet
