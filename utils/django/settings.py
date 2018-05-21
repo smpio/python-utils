@@ -38,6 +38,7 @@ def get_env(project_name, **scheme):
             for setting_name in ('CACHE_URL', 'CELERY_BROKER_URL', 'CELERY_RESULT_BACKEND_URL'):
                 env.scheme[setting_name] = (str, env.scheme[setting_name][1].replace('//redis', '//localhost'))
 
+    env.project_name = project_name
     return env
 
 
@@ -46,6 +47,7 @@ def init(settings, env=None, enable_database=True, **env_scheme):
         project_name = settings.__name__.rsplit('.', 1)[0]
         env = get_env(project_name)
 
+    settings.PROJECT_NAME = env.project_name
     settings.BUILD_ID = env('BUILD_ID')
 
     configure_debugging(settings, env)
