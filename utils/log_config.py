@@ -63,6 +63,8 @@ base_config = {
             level_INFO,
         'amqp':
             level_INFO,
+        'pika':
+            level_INFO,
     },
 }
 
