@@ -1,7 +1,5 @@
 import environ
 
-import smp
-
 from utils.log_config import get_logging_config
 
 
@@ -22,7 +20,7 @@ def get_env(project_name, **scheme):
         SENTRY_DSN=(str, None),
         ENVIRONMENT_NAME=str,
         SMP_BASE_URL=(str, 'https://api.smp.io/'),
-        SMP_MQ_URL=(str, 'amqp+ssl://mq.smp.io/'),
+        SMP_MQ_URL=(str, 'amqp+ssl://mq.smp.io:5671/'),
         **scheme,
     )
 
@@ -185,8 +183,16 @@ def configure_celery(settings, env):
     settings.CELERY_TASK_CREATE_MISSING_QUEUES = False
 
 
+# TODO: find better way, without modifing global objects
 def configure_smp(settings, env):
-    smp.SmpApiClient.base_url = env('SMP_BASE_URL')
+    import smp
+
+    settings.SMP_BASE_URL = env('SMP_BASE_URL')
+    settings.SMP_MQ_URL = env('SMP_MQ_URL')
+
+    smp.SmpApiClient.base_url = settings.SMP_BASE_URL
     if env('DEV_ENV'):
         smp.SmpApiClient.default_timeout = None
         smp.SmpApiClient.max_tries = 1
+
+    smp.SmpMqClient.url = settings.SMP_MQ_URL
