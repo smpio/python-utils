@@ -29,7 +29,14 @@ def set_log_context_request_id_middleware(get_response):
 
 def use_real_ip_header(get_response):
     def middleware(request):
-        real_ip = request.META['HTTP_X_REAL_IP']
-        request.META['REMOTE_ADDR'] = real_ip
+        try:
+            real_ip = request.META['HTTP_X_REAL_IP']
+        except KeyError:
+            if request.META.get('HTTP_X_SENT_FROM') != 'nginx-ingress-controller':
+                # This header is set for auth_request by nginx ingress controller.
+                # Looks like this is stack configuration error, so raise it up.
+                raise
+        else:
+            request.META['REMOTE_ADDR'] = real_ip
         return get_response(request)
     return middleware
