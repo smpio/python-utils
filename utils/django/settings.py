@@ -156,11 +156,11 @@ def configure_logging(settings, env):
     if env('SENTRY_DSN'):
         settings.RAVEN_CONFIG = {
             'dsn': env('SENTRY_DSN'),
-            'processors': (
+            'processors': [
                 'raven.processors.RemovePostDataProcessor',
                 'raven.processors.RemoveStackLocalsProcessor',
                 'raven.processors.SanitizePasswordsProcessor',
-            ),
+            ],
             'include_versions': False,
             'release': settings.BUILD_ID,
         }
