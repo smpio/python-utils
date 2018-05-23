@@ -1,6 +1,10 @@
+import warnings
+
 import environ
 
 from utils.log_config import get_logging_config
+
+env_file = '.env'
 
 
 def get_env(project_name, **scheme):
@@ -24,6 +28,10 @@ def get_env(project_name, **scheme):
     )
 
     if env('DEV_ENV'):
+        print('Loading env vars from', env_file)
+        warnings.filterwarnings('ignore', module='environ.environ', message='Error reading .*')
+        environ.Env.read_env(env_file)
+
         env.scheme['SECRET_KEY'] = (str, 'dev')
         env.scheme['SQL_LOGGING'] = (str, True)
 
