@@ -18,7 +18,6 @@ def get_env(project_name, **scheme):
         CELERY_RESULT_BACKEND_URL=(str, 'redis://redis/2'),
         BUILD_ID=(str, None),
         SENTRY_DSN=(str, None),
-        ENVIRONMENT_NAME=str,
         SMP_BASE_URL=(str, 'https://api.smp.io/'),
         SMP_MQ_URL=(str, 'amqp+ssl://mq.smp.io:5671/'),
         **scheme,
@@ -27,7 +26,6 @@ def get_env(project_name, **scheme):
     if env('DEV_ENV'):
         env.scheme['SECRET_KEY'] = (str, 'dev')
         env.scheme['SQL_LOGGING'] = (str, True)
-        env.scheme['ENVIRONMENT_NAME'] = (str, 'dev')
 
         if env('CONTAINER_ENV'):
             env.scheme['DATABASE_URL'] = (str, f'postgres://postgres@postgres/{project_name}')
@@ -154,7 +152,6 @@ def configure_logging(settings, env):
             ),
             'include_versions': False,
             'release': settings.BUILD_ID,
-            'environment': env('ENVIRONMENT_NAME'),
         }
 
 
