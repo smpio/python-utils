@@ -1,4 +1,6 @@
+import os
 import copy
+
 
 level_NOTSET = {
     'level': 'NOTSET'
@@ -32,13 +34,20 @@ providers_config = {
     },
     'syslog': {
         'class': 'logging.handlers.SysLogHandler',
-        'address': '/dev/log',
         'formatter': 'syslog',
+        'address': '/dev/log',
     },
     'sentry': {
         'class': 'raven.contrib.django.raven_compat.handlers.SentryHandler',
         'level': 'WARNING',
-    }
+    },
+    'gelf': {
+        'class': 'graypy.GELFHandler',
+        'formatter': 'message',
+        'host': os.environ.get('GELF_HOST'),
+        'port': int(os.environ.get('GELF_PORT', 12201)),
+        'debugging_fields': False,
+    },
 }
 
 
