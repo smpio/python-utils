@@ -84,7 +84,7 @@ def configure_debugging(settings, env):
 def configure_security(settings, env):
     settings.SECRET_KEY = env('SECRET_KEY')
     settings.ALLOWED_HOSTS = ['*']
-    settings.SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTOCOL', 'https')
+    settings.SECURE_PROXY_SSL_HEADER = ('HTTP_X_SCHEME', 'https')
 
 
 def configure_general(settings, env):
