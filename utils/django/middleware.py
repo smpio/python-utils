@@ -25,3 +25,11 @@ def set_log_context_request_id_middleware(get_response):
         with log_context(request_id=request.id):
             return get_response(request)
     return middleware
+
+
+def use_real_ip_header(get_response):
+    def middleware(request):
+        real_ip = request.META['HTTP_X_REAL_IP']
+        request.META['REMOTE_ADDR'] = real_ip
+        return get_response(request)
+    return middleware
