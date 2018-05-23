@@ -86,7 +86,12 @@ def configure_general(settings, env):
     ]
 
     settings.MIDDLEWARE = [
+        'utils.django.middleware.generate_request_id_middleware',
+        'utils.django.middleware.set_log_context_request_id_middleware',
     ]
+
+    if not env('DEV_ENV'):
+        settings.MIDDLEWARE.insert(0, 'utils.django.middleware.use_real_ip_header')
 
     settings.APPEND_SLASH = False
     settings.ROOT_URLCONF = settings.PROJECT_NAME + '.urls'
