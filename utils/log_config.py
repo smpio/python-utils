@@ -28,6 +28,9 @@ formatters_config = {
 }
 
 filters_config = {
+    'set_context': {
+        '()': 'utils.log_filters.SetContext',
+    },
     'os_env_vars': {
         '()': 'utils.log_filters.OsEnvVars',
     },

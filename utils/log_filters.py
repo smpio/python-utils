@@ -1,6 +1,16 @@
 import os
 
 
+class SetContext:
+    def __init__(self):
+        from .log_context import _context
+        self.context = _context
+
+    def filter(self, record):
+        record.__dict__.update(self.context.__dict__)
+        return True
+
+
 class OsEnvVars:
     var_prefix = 'LOG.'
 

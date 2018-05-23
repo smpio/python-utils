@@ -15,10 +15,3 @@ def log_context(**kwargs):
                 delattr(_context, k)
             except AttributeError:
                 pass
-
-
-class SetContext:
-    @staticmethod
-    def filter(record):
-        record.__dict__.update(_context.__dict__)
-        return True
