@@ -205,5 +205,3 @@ def configure_smp(settings, env):
     if env('DEV_ENV'):
         smp.SmpApiClient.default_timeout = None
         smp.SmpApiClient.max_tries = 1
-
-    smp.SmpMqClient.url = settings.SMP_MQ_URL
