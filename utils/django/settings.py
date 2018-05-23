@@ -43,8 +43,6 @@ def get_env(project_name, **scheme):
             for setting_name in ('CACHE_URL', 'CELERY_BROKER_URL', 'CELERY_RESULT_BACKEND_URL'):
                 env.scheme[setting_name] = (str, env.scheme[setting_name][1].replace('//redis', '//localhost'))
 
-        env.scheme['USE_REAL_IP_HEADER'] = (bool, False)
-
     env.project_name = project_name
     return env
 
