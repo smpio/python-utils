@@ -24,6 +24,7 @@ def get_env(project_name, **scheme):
         SENTRY_DSN=(str, None),
         SMP_BASE_URL=(str, 'https://api.smp.io/'),
         SMP_MQ_URL=(str, 'amqp+ssl://mq.smp.io:5671/'),
+        USE_REAL_IP_HEADER=(bool, True),
         **scheme,
     )
 
@@ -41,6 +42,8 @@ def get_env(project_name, **scheme):
             env.scheme['DATABASE_URL'] = (str, f'postgres://postgres@localhost/{project_name}')
             for setting_name in ('CACHE_URL', 'CELERY_BROKER_URL', 'CELERY_RESULT_BACKEND_URL'):
                 env.scheme[setting_name] = (str, env.scheme[setting_name][1].replace('//redis', '//localhost'))
+
+        env.scheme['USE_REAL_IP_HEADER'] = (bool, False)
 
     env.project_name = project_name
     return env
@@ -96,7 +99,7 @@ def configure_general(settings, env):
         'utils.django.middleware.set_log_context_request_id_middleware',
     ]
 
-    if not env('DEV_ENV'):
+    if env('USE_REAL_IP_HEADER'):
         settings.MIDDLEWARE.insert(0, 'utils.django.middleware.use_real_ip_header')
 
     settings.APPEND_SLASH = False
