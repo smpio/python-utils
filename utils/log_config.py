@@ -65,6 +65,8 @@ base_config = {
             level_INFO,
         'pika':
             level_INFO,
+        'raven.contrib.django.client.DjangoClient':
+            level_INFO,
     },
 }
 
