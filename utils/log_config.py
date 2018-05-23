@@ -27,6 +27,14 @@ formatters_config = {
     }
 }
 
+filters_config = {
+    'os_env_vars': {
+        '()': 'utils.log_filters.OsEnvVars',
+    },
+}
+
+all_filters = list(filters_config.keys())
+
 providers_config = {
     'console': {
         'class': 'logging.StreamHandler',
@@ -50,12 +58,15 @@ providers_config = {
     },
 }
 
+for provider in providers_config.values():
+    provider['filters'] = all_filters
+
 
 base_config = {
     'version': 1,
     'disable_existing_loggers': False,
     'formatters': formatters_config,
-    'filters': {},
+    'filters': filters_config,
     'handlers': {},
     'loggers': {
         '': {
