@@ -19,9 +19,6 @@ formatters_config = {
     'dev': {
         'format': '%(name)s %(levelname)s %(message)s'
     },
-    'syslog': {
-        'format': 'python %(levelname)s %(processName)s %(threadName)s %(name)s  %(message)s',
-    },
     'message': {
         'format': '%(message)s'
     }
@@ -43,11 +40,6 @@ providers_config = {
         'class': 'logging.StreamHandler',
         'formatter': 'dev',
     },
-    'syslog': {
-        'class': 'logging.handlers.SysLogHandler',
-        'formatter': 'syslog',
-        'address': '/dev/log',
-    },
     'sentry': {
         'class': 'raven.contrib.django.raven_compat.handlers.SentryHandler',
         'level': 'WARNING',
@@ -61,6 +53,9 @@ providers_config = {
     },
 }
 
+
+# Can't add to root logger filters
+# https://www.saltycrane.com/blog/2014/02/python-logging-filters-do-not-propagate-like-handlers-and-levels-do/
 for provider in providers_config.values():
     provider['filters'] = all_filters
 
@@ -75,8 +70,6 @@ base_config = {
         '': {
             'level': 'NOTSET',
             'handlers': [],
-        },
-        'py.warnings': {
         },
         'django':
             level_NOTSET,
