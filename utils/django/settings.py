@@ -194,14 +194,13 @@ def configure_celery(settings, env):
     settings.CELERY_TASK_CREATE_MISSING_QUEUES = False
 
 
-# TODO: find better way, without modifing global objects
 def configure_smp(settings, env):
     import smp
 
     settings.SMP_BASE_URL = env('SMP_BASE_URL')
     settings.SMP_MQ_URL = env('SMP_MQ_URL')
 
-    smp.SmpApiClient.base_url = settings.SMP_BASE_URL
+    smp.SmpApiClient.default_base_url = settings.SMP_BASE_URL
     if env('DEV_ENV'):
         smp.SmpApiClient.default_timeout = None
         smp.SmpApiClient.max_tries = 1
