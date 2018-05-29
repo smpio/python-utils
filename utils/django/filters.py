@@ -1,4 +1,5 @@
-from django_filters.rest_framework import *
+from django_filters.rest_framework import *  # noqa
+from django_filters.rest_framework import TypedChoiceFilter, FilterSet, ChoiceFilter, DjangoFilterBackend
 
 
 class ChoiceDisplayFilter(TypedChoiceFilter):
