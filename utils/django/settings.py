@@ -121,6 +121,8 @@ def configure_databases(settings, env):
 
     for db in settings.DATABASES.values():
         db['ATOMIC_REQUESTS'] = True
+        if not env('DEV_ENV'):
+            db['CONN_MAX_AGE'] = None
 
 
 def configure_caches(settings, env):
