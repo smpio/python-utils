@@ -1,6 +1,6 @@
 from django_filters.rest_framework import *  # noqa
-from django_filters.rest_framework import TypedChoiceFilter, FilterSet, ChoiceFilter, DjangoFilterBackend, \
-    OrderingFilter as DRFOrderingFilter
+from django_filters.rest_framework import TypedChoiceFilter, FilterSet, ChoiceFilter, DjangoFilterBackend
+from rest_framework.filters import OrderingFilter as DRFOrderingFilter
 
 
 class ChoiceDisplayFilter(TypedChoiceFilter):
