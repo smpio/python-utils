@@ -1,5 +1,6 @@
 from django_filters.rest_framework import *  # noqa
-from django_filters.rest_framework import TypedChoiceFilter, FilterSet, ChoiceFilter, DjangoFilterBackend
+from django_filters.rest_framework import TypedChoiceFilter, FilterSet, ChoiceFilter, DjangoFilterBackend, \
+    OrderingFilter as DRFOrderingFilter
 
 
 class ChoiceDisplayFilter(TypedChoiceFilter):
@@ -32,3 +33,9 @@ class FilterSet(FilterSet):
 
 class FilterBackend(DjangoFilterBackend):
     default_filter_set = FilterSet
+
+
+class OrderingFilter(DRFOrderingFilter):
+
+    def get_default_ordering(self, view):
+        return super().get_default_ordering(view=view) or ('-pk',)
