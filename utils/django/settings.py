@@ -173,7 +173,8 @@ def configure_rest_framework(settings, env):
         'DEFAULT_RENDERER_CLASSES': (
             'rest_framework.renderers.JSONRenderer',
         ),
-        'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
+        'DEFAULT_PAGINATION_CLASS': 'utils.django.pagination.CursorPagination',
+        'PAGE_SIZE': 100,
     }
 
     settings.SWAGGER_SETTINGS = {
