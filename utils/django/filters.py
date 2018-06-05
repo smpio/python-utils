@@ -1,4 +1,6 @@
+from rest_framework.filters import OrderingFilter as BaseOrderingFilter
 from django_filters.rest_framework import *
+
 
 
 class ChoiceDisplayFilter(TypedChoiceFilter):
@@ -31,3 +33,9 @@ class FilterSet(FilterSet):
 
 class FilterBackend(DjangoFilterBackend):
     default_filter_set = FilterSet
+
+
+class OrderingFilter(BaseOrderingFilter):
+
+    def get_default_ordering(self, view):
+        return super().get_default_ordering(view=view) or ('-pk',)
