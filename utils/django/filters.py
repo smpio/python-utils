@@ -1,9 +1,6 @@
-import copy
-
 from django.contrib.postgres.fields import JSONField
 
 from django_filters.filters import EMPTY_VALUES
-from django_filters.rest_framework.filterset import FILTER_FOR_DBFIELD_DEFAULTS as BASE_FILTER_FOR_DBFIELD_DEFAULTS
 from django_filters.rest_framework import *  # noqa
 from django_filters.rest_framework import TypedChoiceFilter, FilterSet, ChoiceFilter, DjangoFilterBackend
 from rest_framework.filters import OrderingFilter as DRFOrderingFilter
@@ -49,14 +46,11 @@ class JsonFilter(Filter):
         return qs
 
 
-FILTER_FOR_DBFIELD_DEFAULTS = copy.deepcopy(BASE_FILTER_FOR_DBFIELD_DEFAULTS)
-FILTER_FOR_DBFIELD_DEFAULTS.update({
-    JSONField: {'filter_class': JsonFilter}
-})
-
-
 class FilterSet(FilterSet):
-    FILTER_DEFAULTS = FILTER_FOR_DBFIELD_DEFAULTS
+    FILTER_DEFAULTS = dict(FilterSet.FILTER_DEFAULTS)
+    FILTER_DEFAULTS.update({
+        JSONField: {'filter_class': JsonFilter}
+    })
 
     @classmethod
     def filter_for_lookup(cls, f, lookup_type):
