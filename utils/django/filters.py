@@ -1,6 +1,14 @@
+import copy
+
+from django.contrib.postgres.fields import JSONField
+
+from django_filters.filters import EMPTY_VALUES
+from django_filters.rest_framework.filterset import FILTER_FOR_DBFIELD_DEFAULTS as BASE_FILTER_FOR_DBFIELD_DEFAULTS
 from django_filters.rest_framework import *  # noqa
 from django_filters.rest_framework import TypedChoiceFilter, FilterSet, ChoiceFilter, DjangoFilterBackend
 from rest_framework.filters import OrderingFilter as DRFOrderingFilter
+
+from .forms.fields import JsonField
 
 
 class ChoiceDisplayFilter(TypedChoiceFilter):
@@ -20,7 +28,36 @@ class ChoiceDisplayFilter(TypedChoiceFilter):
         return self.choice_names_to_values.get(name)
 
 
+class JsonFilter(Filter):
+    field_class = JsonField
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('lookup_expr', 'exact')
+        super().__init__(*args, **kwargs)
+
+    def filter(self, qs, value):
+        if value in EMPTY_VALUES:
+            return qs
+        if self.distinct:
+            qs = qs.distinct()
+
+        method = self.get_method(qs)
+        if isinstance(value, dict):
+            qs = method(**{f'{self.field_name}__{key}': value for key, value in value.items()})
+        else:
+            qs = method(**{self.field_name: value})
+        return qs
+
+
+FILTER_FOR_DBFIELD_DEFAULTS = copy.deepcopy(BASE_FILTER_FOR_DBFIELD_DEFAULTS)
+FILTER_FOR_DBFIELD_DEFAULTS.update({
+    JSONField: {'filter_class': JsonFilter}
+})
+
+
 class FilterSet(FilterSet):
+    FILTER_DEFAULTS = FILTER_FOR_DBFIELD_DEFAULTS
+
     @classmethod
     def filter_for_lookup(cls, f, lookup_type):
         filter_class, params = super().filter_for_lookup(f, lookup_type)
