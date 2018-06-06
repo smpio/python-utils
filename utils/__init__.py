@@ -37,7 +37,7 @@ def attrs(**kwargs):
     return decorator
 
 
-def retry_on_exception(exception_classes=Exception, max_tries=3, retry_backoff_factor=0.5):
+def retry_on_exception(exception_classes=Exception, but=(), max_tries=3, retry_backoff_factor=0.5):
     def decorator(func):
         def wrapped(*args, **kwargs):
             errors = []
@@ -49,6 +49,8 @@ def retry_on_exception(exception_classes=Exception, max_tries=3, retry_backoff_f
                 try:
                     return func(*args, **kwargs)
                 except exception_classes as e:
+                    if isinstance(e, but):
+                        raise e
                     log.warning('%s failed', func, exc_info=True)
                     errors.append(e)
             raise errors[-1]
