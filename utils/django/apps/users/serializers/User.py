@@ -9,4 +9,4 @@ class UserSerializer(PasswordMixin, WriteableFieldsMixin, serializers.ModelSeria
     class Meta:
         model = models.User
         fields = ('email', 'password')
-        writeable_fields = ('email', 'password')
+        writable_fields = ('email', 'password')

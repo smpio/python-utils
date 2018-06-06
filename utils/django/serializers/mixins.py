@@ -1,3 +1,4 @@
+# TODO: class name is "writEable", but attribute is "writ_able" (both are valid English words)
 class WriteableFieldsMixin:
     def get_extra_kwargs(self):
         extra_kwargs = super().get_extra_kwargs()
