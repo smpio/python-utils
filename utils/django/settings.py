@@ -185,8 +185,15 @@ def configure_rest_framework(settings, env):
 def configure_celery(settings, env):
     if env('CELERY_BROKER_URL'):
         settings.CELERY_BROKER_URL = env('CELERY_BROKER_URL')
+
     if env('CELERY_RESULT_BACKEND_URL'):
         settings.CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND_URL')
+
+    if env('DEV_ENV'):
+        settings.CELERY_TASK_DEFAULT_QUEUE = settings.PROJECT_NAME
+    else:
+        settings.CELERY_TASK_DEFAULT_QUEUE = 'default'
+
     settings.CELERY_TIMEZONE = settings.TIME_ZONE
     settings.CELERY_WORKER_REDIRECT_STDOUTS = False
     settings.CELERY_WORKER_HIJACK_ROOT_LOGGER = False
@@ -195,7 +202,6 @@ def configure_celery(settings, env):
     settings.CELERY_TASK_CLEANUP_TIMEOUT = 10   # this is custom setting (not related to celery)
     settings.CELERY_TASK_SOFT_TIME_LIMIT = 5 * 60
     settings.CELERY_TASK_TIME_LIMIT = settings.CELERY_TASK_SOFT_TIME_LIMIT + settings.CELERY_TASK_CLEANUP_TIMEOUT
-    settings.CELERY_TASK_DEFAULT_QUEUE = 'default'
     settings.CELERY_TASK_CREATE_MISSING_QUEUES = False
 
 
