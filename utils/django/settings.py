@@ -177,10 +177,6 @@ def configure_rest_framework(settings, env):
         'PAGE_SIZE': 100,
     }
 
-    settings.SWAGGER_SETTINGS = {
-        'USE_SESSION_AUTH': False,
-    }
-
 
 def configure_celery(settings, env):
     if env('CELERY_BROKER_URL'):

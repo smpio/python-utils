@@ -1,5 +1,7 @@
+import json
+
 from rest_framework import status
-from rest_framework.renderers import JSONRenderer as DRFJSONRenderer
+from rest_framework.renderers import BaseRenderer, JSONRenderer as DRFJSONRenderer
 
 
 class JSONRenderer(DRFJSONRenderer):
@@ -13,3 +15,19 @@ class JSONRenderer(DRFJSONRenderer):
     @staticmethod
     def is_no_content(renderer_context):
         return renderer_context is not None and renderer_context['response'].status_code == status.HTTP_204_NO_CONTENT
+
+
+class OpenAPIRenderer(BaseRenderer):
+    media_type = 'application/openapi+json'
+    format = 'swagger'
+    extra = None
+
+    def render(self, data, media_type=None, renderer_context=None):
+        from openapi_codec.encode import generate_swagger_object
+
+        spec = generate_swagger_object(data)
+
+        if self.extra is not None:
+            spec.update(self.extra)
+
+        return json.dumps(spec)
