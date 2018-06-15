@@ -1,7 +1,7 @@
 import urllib.parse
 
 
-def is_url(url):
+def is_full_url(url):
     try:
         result = urllib.parse.urlparse(url)
         return all([result.scheme, result.netloc, result.path])
