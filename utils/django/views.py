@@ -9,11 +9,11 @@ def get_open_api_view(*args, **kwargs):
         extra = kwargs.pop('extra', None)
 
     kwargs.setdefault('renderer_classes', [Renderer])
-    kwargs.setdefault('generator_class', SwaggerSchemaGenerator)
+    kwargs.setdefault('generator_class', SchemaGenerator)
     return schemas.get_schema_view(*args, **kwargs)
 
 
-class SwaggerSchemaGenerator(BaseSchemaGenerator):
+class SchemaGenerator(BaseSchemaGenerator):
     def get_schema(self, request=None, public=False):
         if request is not None:
             self.url = request.get_full_path()
