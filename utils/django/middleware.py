@@ -28,13 +28,18 @@ def set_log_context_request_id_middleware(get_response):
 
 
 def use_real_ip_header(get_response):
+    """
+    Set REMOTE_ADDR to value from X-Real-IP as we assume that all requests pass through reverse proxy first.
+    If header is not set, exception is raised indicating configuration problem.
+
+    Exception is not raised if request scheme is http, this is useful for in-cluster requests and debugging. Anyway
+    the connection is not protected in this case.
+    """
     def middleware(request):
         try:
             real_ip = request.META['HTTP_X_REAL_IP']
         except KeyError:
-            if request.META.get('HTTP_X_SENT_FROM') != 'nginx-ingress-controller':
-                # This header is set for auth_request by nginx ingress controller.
-                # Looks like this is stack configuration error, so raise it up.
+            if request.scheme != 'http':
                 raise
         else:
             request.META['REMOTE_ADDR'] = real_ip
