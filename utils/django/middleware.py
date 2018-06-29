@@ -40,7 +40,12 @@ def use_real_ip_header(get_response):
             real_ip = request.META['HTTP_X_REAL_IP']
         except KeyError:
             if request.scheme != 'http':
-                raise
+                if request.META.get('HTTP_X_SENT_FROM') == 'nginx-ingress-controller':
+                    # Nginx ingress controller sets X-Sent-From for auth requests
+                    # also it sets X-Scheme to original scheme. We should not raise error in this case.
+                    pass
+                else:
+                    raise
         else:
             request.META['REMOTE_ADDR'] = real_ip
         return get_response(request)
