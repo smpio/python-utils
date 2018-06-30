@@ -42,7 +42,8 @@ def use_real_ip_header(get_response):
             if request.scheme != 'http':
                 if request.META.get('HTTP_X_SENT_FROM') == 'nginx-ingress-controller':
                     # Nginx ingress controller sets X-Sent-From for auth requests
-                    # also it sets X-Scheme to original scheme. We should not raise error in this case.
+                    # also it sets X-Scheme to original scheme (https). But doesn't set X-Real-IP.
+                    # We should not raise error in this case.
                     pass
                 else:
                     raise
