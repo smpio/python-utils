@@ -134,6 +134,7 @@ def configure_caches(settings, env):
     }
     if env('CACHE_URL'):
         settings.CACHES['default'] = env.cache_url('CACHE_URL')
+        settings.CACHES['default']['KEY_PREFIX'] = settings.PROJECT_NAME
 
     # in case you use session middleware
     settings.SESSION_ENGINE = 'django.contrib.sessions.backends.cache'

@@ -22,8 +22,8 @@ class TypedCache:
         'delete_many',
     )
 
-    def __init__(self, app_label, object_type, alias=DEFAULT_CACHE_ALIAS):
-        self.key_prefix = f'{app_label}:{object_type}:'
+    def __init__(self, *prefix_parts, alias=DEFAULT_CACHE_ALIAS):
+        self.key_prefix = ':'.join(prefix_parts)
         self.cache = caches[alias]
 
     def make_key(self, key):
