@@ -1,11 +1,16 @@
-from django.contrib.postgres.fields import JSONField
+from enum import EnumMeta
 
+from django.contrib.postgres.fields import JSONField
+from django.db import models
 from django_filters.filters import EMPTY_VALUES
 from django_filters.rest_framework import *  # noqa
 from django_filters.rest_framework import TypedChoiceFilter, FilterSet, ChoiceFilter, DjangoFilterBackend
+from django_filters.utils import try_dbfield
+
 from rest_framework.filters import OrderingFilter as DRFOrderingFilter
 
 from .forms.fields import JsonField
+from .models import EnumField
 
 
 class ChoiceDisplayFilter(TypedChoiceFilter):
@@ -46,10 +51,31 @@ class JsonFilter(Filter):
         return qs
 
 
+class EnumInFilter(Filter):  # ToDo: not only In filter?
+    def __init__(self, *args, **kwargs):
+        self.choices_enum = kwargs.pop('choices_enum')
+        super().__init__(*args, **kwargs)
+
+    def _get_value(self, valueName):
+        return self.choices_enum[valueName].value
+
+    def filter(self, qs, valueNames):
+        values = map(self._get_value, valueNames)
+        if values in EMPTY_VALUES:
+            return qs
+        if self.distinct:
+            qs = qs.distinct()
+
+        method = self.get_method(qs)
+        qs = method(**{f'{self.field_name}__{self.lookup_expr}': values})
+        return qs
+
+
 class FilterSet(FilterSet):
     FILTER_DEFAULTS = dict(FilterSet.FILTER_DEFAULTS)
     FILTER_DEFAULTS.update({
-        JSONField: {'filter_class': JsonFilter}
+        JSONField: {'filter_class': JsonFilter},
+        EnumField: {'filter_class': EnumInFilter},
     })
 
     @classmethod
@@ -58,6 +84,10 @@ class FilterSet(FilterSet):
 
         if filter_class is ChoiceFilter:
             filter_class = ChoiceDisplayFilter
+
+        if isinstance(f, EnumField):
+            params.update({'choices_enum': f.choices_enum})
+            filter_class = EnumInFilter
 
         return filter_class, params
 
