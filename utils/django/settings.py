@@ -57,6 +57,9 @@ if env('DEV_ENV'):
         for setting_name in ('CACHE_URL', 'CELERY_BROKER_URL', 'CELERY_RESULT_BACKEND_URL'):
             env.scheme[setting_name] = (str, env.scheme[setting_name][1].replace('//redis', '//localhost'))
 
+    env.scheme['SMP_BASE_URL'] = (str, 'http://localhost:7000/')
+    env.scheme['SMP_MQ_URL'] = (str, 'amqp://localhost/')
+
 BUILD_ID = env('BUILD_ID')
 
 
@@ -208,12 +211,10 @@ CELERY_TASK_CREATE_MISSING_QUEUES = False
 ###
 # SMP
 ###
-import smp  # noqa
-
 SMP_BASE_URL = env('SMP_BASE_URL')
 SMP_MQ_URL = env('SMP_MQ_URL')
 
-smp.SmpApiClient.default_base_url = SMP_BASE_URL
 if env('DEV_ENV'):
+    import smp  # noqa
     smp.SmpApiClient.default_timeout = None
     smp.SmpApiClient.max_tries = 1
