@@ -58,11 +58,11 @@ class FilterSet(FilterSet):
     def filter_for_lookup(cls, f, lookup_type):
         filter_class, params = super().filter_for_lookup(f, lookup_type)
 
-        if filter_class is ChoiceFilter:
-            filter_class = ChoiceDisplayFilter
-
-        if lookup_type == 'in' and isinstance(f, EnumField):
-            params.update({'choices': f.choices})
+        if isinstance(f, EnumField):
+            if filter_class is ChoiceFilter:
+                filter_class = ChoiceDisplayFilter
+            if lookup_type == 'in':
+                params.update({'choices': f.choices})
 
         return filter_class, params
 
