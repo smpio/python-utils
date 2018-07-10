@@ -1,11 +1,12 @@
 from django.contrib.postgres.fields import JSONField
-
 from django_filters.filters import EMPTY_VALUES
 from django_filters.rest_framework import *  # noqa
 from django_filters.rest_framework import TypedChoiceFilter, FilterSet, ChoiceFilter, DjangoFilterBackend
+
 from rest_framework.filters import OrderingFilter as DRFOrderingFilter
 
 from .forms.fields import JsonField
+from .models import EnumField
 
 
 class ChoiceDisplayFilter(TypedChoiceFilter):
@@ -49,7 +50,8 @@ class JsonFilter(Filter):
 class FilterSet(FilterSet):
     FILTER_DEFAULTS = dict(FilterSet.FILTER_DEFAULTS)
     FILTER_DEFAULTS.update({
-        JSONField: {'filter_class': JsonFilter}
+        JSONField: {'filter_class': JsonFilter},
+        EnumField: {'filter_class': ChoiceDisplayFilter},
     })
 
     @classmethod
@@ -58,6 +60,9 @@ class FilterSet(FilterSet):
 
         if filter_class is ChoiceFilter:
             filter_class = ChoiceDisplayFilter
+
+        if lookup_type == 'in' and isinstance(f, EnumField):
+            params.update({'choices': f.choices})
 
         return filter_class, params
 
