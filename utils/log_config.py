@@ -41,7 +41,7 @@ providers_config = {
         'formatter': 'dev',
     },
     'sentry': {
-        'class': 'raven.contrib.django.raven_compat.handlers.SentryHandler',
+        'class': 'raven.contrib.django.handlers.SentryHandler',
         'level': 'WARNING',
     },
     'gelf': {

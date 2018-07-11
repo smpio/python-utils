@@ -158,6 +158,11 @@ USE_TZ = False
 LOGGING = get_logging_config(provider=env('LOGGING'),
                              log_sql=env('SQL_LOGGING'),
                              enable_sentry=bool(env('SENTRY_DSN')))
+
+
+###
+# Sentry
+###
 if env('SENTRY_DSN'):
     RAVEN_CONFIG = {
         'dsn': env('SENTRY_DSN'),
