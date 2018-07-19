@@ -68,7 +68,7 @@ class FilterSet(FilterSet):
 
 
 class FilterBackend(DjangoFilterBackend):
-    default_filter_set = FilterSet
+    filterset_base = FilterSet
 
 
 class OrderingFilter(DRFOrderingFilter):
