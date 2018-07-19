@@ -48,7 +48,7 @@ if env('DEV_ENV'):
     environ.Env.read_env('.env')
 
     env.scheme['SECRET_KEY'] = (str, 'dev')
-    env.scheme['SQL_LOGGING'] = (str, True)
+    env.scheme['SQL_LOGGING'] = (bool, True)
 
     if env('CONTAINER_ENV'):
         env.scheme['DATABASE_URL'] = (str, f'postgres://postgres@postgres/{PROJECT_NAME}')
