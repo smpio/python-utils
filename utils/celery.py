@@ -78,3 +78,16 @@ class TimeClaimingMixin(TimeLimitPropertiesMixin):
             hard = soft + self.task_cleanup_timeout
             log.info('Restarting task with time limit %s', soft)
             return self.retry(soft_time_limit=soft, time_limit=hard, countdown=0)
+
+
+class TaskModuleNamingMixin:
+    """
+    Celery App mixin that makes more friendly tasks names in case when a task is defined in separate module.
+    For example if you hame task `mytask` in `myapp.tasks.mytask` module, it will be named as
+    `myapp.tasks.mytask` instead of default `myapp.tasks.mytask.mytask`.
+    """
+    def gen_task_name(self, name, module):
+        dot_name = '.' + name
+        if module.endswith(dot_name):
+            module = module[:-len(dot_name)]
+        return super().gen_task_name(name, module)
