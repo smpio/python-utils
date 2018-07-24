@@ -57,3 +57,7 @@ def retry_on_exception(exception_classes=Exception, but=(), max_tries=3, retry_b
 
         return wrapped
     return decorator
+
+
+def str2bool(value: str) -> bool:
+    return value.lower() in {'true', 'yes', '1'}
