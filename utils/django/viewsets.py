@@ -129,11 +129,12 @@ class UpdateNewMixin:
     # adds data from query params for PUT /_new and PATCH /_new
     def get_serializer(self, *args, **kwargs):
         if self.action in ('update', 'partial_update'):
-            lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
-            if self.kwargs.get(lookup_url_kwarg) == self.update_new_pk:
+            if 'data' in kwargs:
                 data = self.request.query_params.dict()
                 data.update(kwargs['data'])
                 kwargs['data'] = data
+            lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
+            if self.kwargs.get(lookup_url_kwarg) == self.update_new_pk:
                 kwargs['partial'] = False
         return super().get_serializer(*args, **kwargs)
 
