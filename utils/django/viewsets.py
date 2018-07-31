@@ -121,8 +121,7 @@ class UpdateNewMixin:
     # returns None for PUT /_new and PATCH /_new
     def get_object(self):
         if self.action in ('update', 'partial_update'):
-            lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
-            if self.kwargs.get(lookup_url_kwarg) == self.update_new_pk:
+            if self._get_lookup() == self.update_new_pk:
                 return None
         return super().get_object()
 
@@ -133,8 +132,7 @@ class UpdateNewMixin:
                 data = self.request.query_params.dict()
                 data.update(kwargs['data'])
                 kwargs['data'] = data
-            lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
-            if self.kwargs.get(lookup_url_kwarg) == self.update_new_pk:
+            if self._get_lookup() == self.update_new_pk:
                 kwargs['partial'] = False
         return super().get_serializer(*args, **kwargs)
 
@@ -142,7 +140,10 @@ class UpdateNewMixin:
     def update(self, *args, **kwargs):
         resp = super().update(*args, **kwargs)
         if resp.status_code == 200:
-            lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
-            if self.kwargs.get(lookup_url_kwarg) == self.update_new_pk:
+            if self._get_lookup() == self.update_new_pk:
                 resp.status_code = 201
         return resp
+
+    def _get_lookup(self):
+        lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
+        return self.kwargs.get(lookup_url_kwarg)
