@@ -57,7 +57,8 @@ class RedirectViewSet(viewsets.ViewSet):
             return self._redirect(f'{self.base_viewset_name}-detail', self.update_new_pk, request=request,
                                   params=self.get_data_from_lookup(lookup), permanent=False)
         else:
-            return self._redirect(f'{self.base_viewset_name}-detail', pk, request=request)
+            return self._redirect(f'{self.base_viewset_name}-detail', pk, request=request,
+                                  params=self.get_data_from_lookup(lookup))
 
     def partial_update(self, request, pk):
         lookup = pk
@@ -66,7 +67,8 @@ class RedirectViewSet(viewsets.ViewSet):
             return self._redirect(f'{self.base_viewset_name}-detail', self.update_new_pk, request=request,
                                   params=self.get_data_from_lookup(lookup), permanent=False)
         else:
-            return self._redirect(f'{self.base_viewset_name}-detail', pk, request=request)
+            return self._redirect(f'{self.base_viewset_name}-detail', pk, request=request,
+                                  params=self.get_data_from_lookup(lookup))
 
     def destroy(self, request, pk):
         lookup = pk
