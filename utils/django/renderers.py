@@ -28,7 +28,8 @@ class OpenAPIRenderer(BaseRenderer):
         from openapi_codec.encode import generate_swagger_object
 
         if not isinstance(data, coreapi.Document):
-            raise TypeError('Expected a `coreapi.Document` instance')
+            return JSONRenderer().render(data, media_type, renderer_context)
+
         spec = generate_swagger_object(data)
         if self.extra is not None:
             spec.update(self.extra)
