@@ -132,6 +132,7 @@ class UpdateNewMixin:
                 data = self.request.query_params.dict()
                 data.update(kwargs['data'])
                 kwargs['data'] = data
+                kwargs['partial'] = False
         return super().get_serializer(*args, **kwargs)
 
     # changes response status code from 201 to 200 for PUT /_new and PATCH /_new
