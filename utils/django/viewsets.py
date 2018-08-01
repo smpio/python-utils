@@ -144,6 +144,13 @@ class UpdateNewMixin:
                 resp.status_code = 201
         return resp
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        if self.action in ('update', 'partial_update'):
+            if self._get_lookup() == self.update_new_pk:
+                context['action'] = 'create'
+        return context
+
     def _get_lookup(self):
         lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
         return self.kwargs.get(lookup_url_kwarg)

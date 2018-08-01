@@ -19,7 +19,7 @@ class WriteOnceFieldsMixin:
         extra_kwargs = super().get_extra_kwargs()
 
         try:
-            action = self.context['view'].action
+            action = self.context.get('action') or self.context['view'].action
         except KeyError:
             return extra_kwargs
 
