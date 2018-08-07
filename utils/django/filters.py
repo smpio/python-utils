@@ -1,3 +1,5 @@
+# flake8: noqa: F405
+
 from django.contrib.postgres.fields import JSONField, ArrayField
 from django_filters.filters import EMPTY_VALUES
 from django_filters.rest_framework import *  # noqa
