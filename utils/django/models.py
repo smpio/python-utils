@@ -1,6 +1,10 @@
-from __future__ import print_function, division, absolute_import, unicode_literals
 from enum import EnumMeta
+
 from django.db import models
+
+
+def enum2choices(enum):
+    return [(item.value, item.name) for item in enum]
 
 
 class EnumField(models.SmallIntegerField):
@@ -15,10 +19,5 @@ class EnumField(models.SmallIntegerField):
             if not isinstance(choices_enum, EnumMeta):
                 raise TypeError(f'Excpected {EnumMeta.__name__}, got {type(choices_enum).__name__}')
             self.choices_enum = choices_enum
-
-            if hasattr(self.choices_enum, 'as_choices'):
-                choices = self.choices_enum.as_choices()
-            else:
-                choices = [(attr.value, attr.name) for attr in self.choices_enum]
-            kwargs['choices'] = choices
+            kwargs['choices'] = enum2choices(self.choices_enum)
         super().__init__(*args, **kwargs)
