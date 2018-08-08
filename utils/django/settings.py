@@ -35,6 +35,7 @@ env = environ.Env(
     SQL_LOGGING=(bool, False),
     CELERY_BROKER_URL=(str, 'redis://redis/1'),
     CELERY_RESULT_BACKEND_URL=(str, 'redis://redis/2'),
+    CELERY_ALWAYS_EAGER=(bool, False),
     BUILD_ID=(str, None),
     SENTRY_DSN=(str, None),
     SMP_BASE_URL=(str, 'https://api.smp.io/'),
@@ -211,6 +212,7 @@ CELERY_TASK_CLEANUP_TIMEOUT = 10   # this is custom setting (not related to cele
 CELERY_TASK_SOFT_TIME_LIMIT = 5 * 60
 CELERY_TASK_TIME_LIMIT = CELERY_TASK_SOFT_TIME_LIMIT + CELERY_TASK_CLEANUP_TIMEOUT
 CELERY_TASK_CREATE_MISSING_QUEUES = False
+CELERY_TASK_ALWAYS_EAGER = env('CELERY_ALWAYS_EAGER')
 
 
 ###
