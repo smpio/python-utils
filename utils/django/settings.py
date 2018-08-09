@@ -1,3 +1,4 @@
+import sys
 import inspect
 import warnings
 
@@ -44,7 +45,7 @@ env = environ.Env(
 )
 
 if env('DEV_ENV'):
-    print('Django project:', PROJECT_NAME)
+    print('Django project:', PROJECT_NAME, file=sys.stderr)
     warnings.filterwarnings('ignore', module='environ.environ', message='Error reading .*')
     environ.Env.read_env('.env')
 
