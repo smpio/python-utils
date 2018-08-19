@@ -34,6 +34,7 @@ env = environ.Env(
     EMAIL_URL=(str, None),
     LOGGING=(str, 'console'),
     SQL_LOGGING=(bool, False),
+    TEST_RUNNER=(str, None),
     CELERY_BROKER_URL=(str, 'redis://redis/1'),
     CELERY_RESULT_BACKEND_URL=(str, 'redis://redis/2'),
     CELERY_ALWAYS_EAGER=(bool, False),
@@ -160,6 +161,13 @@ USE_TZ = False
 LOGGING = get_logging_config(provider=env('LOGGING'),
                              log_sql=env('SQL_LOGGING'),
                              enable_sentry=bool(env('SENTRY_DSN')))
+
+
+###
+# Testing
+###
+if env('TEST_RUNNER'):
+    TEST_RUNNER = env('TEST_RUNNER')
 
 
 ###
