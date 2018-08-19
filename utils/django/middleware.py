@@ -1,14 +1,3 @@
-def global_request_middleware(get_response):
-    from . import context
-
-    def middleware(request):
-        context._context.request = request
-        response = get_response(request)
-        del context._context.request
-        return response
-    return middleware
-
-
 def generate_request_id_middleware(get_response):
     import uuid
 
