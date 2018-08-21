@@ -1,6 +1,7 @@
 import threading
 import contextlib
 
+# TODO: use contextvars from Python 3.7
 _context = threading.local()
 
 
