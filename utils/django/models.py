@@ -35,4 +35,4 @@ class EnumField(models.SmallIntegerField):
 
 
 def enum2choices(enum):
-    return [(item.value, item.name) for item in enum]
+    return [(item, item.name) for item in enum]
