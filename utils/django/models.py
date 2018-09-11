@@ -21,3 +21,17 @@ class EnumField(models.SmallIntegerField):
             self.choices_enum = choices_enum
             kwargs['choices'] = enum2choices(self.choices_enum)
         super().__init__(*args, **kwargs)
+
+    def from_db_value(self, value, expression, connection):
+        if value is None:
+            return value
+        return self.choices_enum(value)
+
+    def to_python(self, value):
+        if isinstance(value, self.choices_enum):
+            return value
+
+        if value is None:
+            return value
+
+        return self.choices_enum(super().to_python(value))
