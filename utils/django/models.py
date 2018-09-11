@@ -3,10 +3,6 @@ from enum import EnumMeta
 from django.db import models
 
 
-def enum2choices(enum):
-    return [(item.value, item.name) for item in enum]
-
-
 class EnumField(models.SmallIntegerField):
     """
     Used to make enum-choices in fields filterable by "in" lookup_type using their names, not values.
@@ -15,23 +11,28 @@ class EnumField(models.SmallIntegerField):
     """
     def __init__(self, *args, **kwargs):
         if 'choices' not in kwargs:
-            choices_enum = kwargs.pop('choices_enum')
-            if not isinstance(choices_enum, EnumMeta):
-                raise TypeError(f'Excpected {EnumMeta.__name__}, got {type(choices_enum).__name__}')
-            self.choices_enum = choices_enum
-            kwargs['choices'] = enum2choices(self.choices_enum)
+            # TODO: remove support for choices_enum
+            enum_class = kwargs.pop('enum_class', None) or kwargs.pop('choices_enum')
+            if not isinstance(enum_class, EnumMeta):
+                raise TypeError(f'Excpected {EnumMeta.__name__}, got {type(enum_class).__name__}')
+            self.enum_class = enum_class
+            kwargs['choices'] = enum2choices(self.enum_class)
         super().__init__(*args, **kwargs)
 
     def from_db_value(self, value, expression, connection):
         if value is None:
             return value
-        return self.choices_enum(value)
+        return self.enum_class(value)
 
     def to_python(self, value):
-        if isinstance(value, self.choices_enum):
+        if isinstance(value, self.enum_class):
             return value
 
         if value is None:
             return value
 
-        return self.choices_enum(super().to_python(value))
+        return self.enum_class(super().to_python(value))
+
+
+def enum2choices(enum):
+    return [(item.value, item.name) for item in enum]
