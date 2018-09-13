@@ -41,7 +41,7 @@ env = environ.Env(
     BUILD_ID=(str, None),
     SENTRY_DSN=(str, None),
     SMP_BASE_URL=(str, 'https://api.smp.io/'),
-    SMP_MQ_URL=(str, 'amqp+ssl://mq.smp.io:5671/'),
+    SMP_MQ_URL=(str, 'amqps://mq.smp.io:5671/'),
     USE_REAL_IP_HEADER=(bool, True),
 )
 
