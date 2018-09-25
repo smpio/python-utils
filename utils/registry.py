@@ -19,8 +19,8 @@ class _RegistryInterfaceMixin(ABC):
         return self.map[id]
 
     def as_choices(self):
-        for obj in self.get_list():
-            yield (obj.id, obj.name)
+        for k, v in self.map.items():
+            yield (k, v)
 
 
 class SubclassRegistry(_RegistryInterfaceMixin):
