@@ -8,7 +8,8 @@ def get_wsgi_application(preinit=default_behaviour):
     from django.core.wsgi import get_wsgi_application
 
     app = get_wsgi_application()
-    app = wsgi_middleware.x_trace_id(app)
+    app = wsgi_middleware.trace(app, 'X-Trace-ID', 'trace_id')
+    app = wsgi_middleware.trace(app, 'X-Request-ID', 'request_id')
     app = wsgi_middleware.XScriptName(app)
 
     if getattr(settings, 'RAVEN_CONFIG', None):

@@ -1,21 +1,3 @@
-def generate_request_id_middleware(get_response):
-    import uuid
-
-    def middleware(request):
-        request.id = str(uuid.uuid4())
-        return get_response(request)
-    return middleware
-
-
-def set_log_context_request_id_middleware(get_response):
-    from utils.log_context import log_context
-
-    def middleware(request):
-        with log_context(request_id=request.id):
-            return get_response(request)
-    return middleware
-
-
 def use_real_ip_header(get_response):
     """
     Set REMOTE_ADDR to value from X-Real-IP as we assume that all requests pass through reverse proxy first.

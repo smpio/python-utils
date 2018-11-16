@@ -89,8 +89,6 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'utils.django.middleware.add_trace_id_response_header',
-    'utils.django.middleware.generate_request_id_middleware',
-    'utils.django.middleware.set_log_context_request_id_middleware',
 ]
 
 if env('USE_REAL_IP_HEADER'):
