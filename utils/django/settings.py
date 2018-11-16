@@ -88,6 +88,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'utils.django.middleware.add_trace_id_response_header',
     'utils.django.middleware.generate_request_id_middleware',
     'utils.django.middleware.set_log_context_request_id_middleware',
 ]
@@ -158,6 +159,7 @@ USE_TZ = False
 ###
 # Logging
 ###
+# TODO: add smp_service context var
 LOGGING = get_logging_config(provider=env('LOGGING'),
                              log_sql=env('SQL_LOGGING'),
                              enable_sentry=bool(env('SENTRY_DSN')))
@@ -183,6 +185,9 @@ if env('SENTRY_DSN'):
         ],
         'include_versions': False,
         'release': BUILD_ID,
+        'tags': {
+            # 'smp_service': # TODO
+        },
     }
 
 

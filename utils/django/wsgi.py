@@ -8,11 +8,11 @@ def get_wsgi_application(preinit=default_behaviour):
     from django.core.wsgi import get_wsgi_application
 
     app = get_wsgi_application()
+    app = wsgi_middleware.x_trace_id(app)
+    app = wsgi_middleware.XScriptName(app)
 
     if getattr(settings, 'RAVEN_CONFIG', None):
         app = wsgi_middleware.Sentry(app)
-
-    app = wsgi_middleware.XScriptName(app)
 
     if preinit is default_behaviour:
         from django.conf import settings

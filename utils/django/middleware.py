@@ -40,3 +40,16 @@ def use_real_ip_header(get_response):
             request.META['REMOTE_ADDR'] = real_ip
         return get_response(request)
     return middleware
+
+
+def add_trace_id_response_header(get_response):
+    from utils.log_context import context
+
+    def middleware(request):
+        response = get_response(request)
+        try:
+            response['X-Trace-ID'] = context.trace_id
+        except AttributeError:
+            pass
+        return response
+    return middleware
