@@ -4,6 +4,8 @@ import contextlib
 # TODO: use contextvars from Python 3.7
 _context = threading.local()
 
+_default = object()
+
 
 @contextlib.contextmanager
 def log_context(**kwargs):
@@ -16,3 +18,21 @@ def log_context(**kwargs):
                 delattr(_context, k)
             except AttributeError:
                 pass
+
+
+def get_context_var(name, default=_default):
+    try:
+        return _context[name]
+    except KeyError:
+        if default is _default:
+            raise
+        else:
+            return default
+
+
+class _ContextReader:
+    def __getattr__(self, item):
+        return getattr(_context, item)
+
+
+context = _ContextReader()
