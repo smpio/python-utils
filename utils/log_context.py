@@ -34,5 +34,8 @@ class _ContextReader:
     def __getattr__(self, item):
         return getattr(_context, item)
 
+    def __iter__(self):
+        return iter(_context.__dict__.items())
+
 
 context = _ContextReader()

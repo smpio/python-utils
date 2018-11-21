@@ -6,11 +6,33 @@ log = logging.getLogger(__name__)
 
 
 class LogContextMixin:
+    def apply_async(self, *args, **kwargs):
+        from .log_context import context
+
+        headers = kwargs.get('headers', {})
+        kwargs['headers'] = headers
+
+        ctx = headers.get('x-log-context', {})
+        headers['x_log_context'] = ctx
+
+        for k, v in context:
+            ctx[k] = v
+
+        return super().apply_async(*args, **kwargs)
+
     def __call__(self, *args, **kwargs):
+        ctx = self.request.get('x_log_context', {})
+
         if self.request.id:
-            with log_context(task_id=self.request.id):
-                return super().__call__(*args, **kwargs)
-        else:
+            if ctx.get('request_id'):
+                ctx['parent_request_id'] = ctx['request_id']
+
+            ctx['task_id'] = ctx['request_id'] = self.request.id
+
+            if not ctx.get('trace_id'):
+                ctx['trace_id'] = ctx['request_id']
+
+        with log_context(**ctx):
             return super().__call__(*args, **kwargs)
 
 
