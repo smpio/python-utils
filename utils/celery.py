@@ -5,7 +5,7 @@ from .log_context import log_context
 log = logging.getLogger(__name__)
 
 
-class LogContextMixin:
+class TracingMixin:
     def apply_async(self, *args, **kwargs):
         from .log_context import context
 
@@ -18,16 +18,19 @@ class LogContextMixin:
         for k, v in context:
             ctx[k] = v
 
+        try:
+            ctx['parent_request_id'] = ctx['request_id']
+            del ctx['request_id']
+        except KeyError:
+            pass
+
         return super().apply_async(*args, **kwargs)
 
     def __call__(self, *args, **kwargs):
         ctx = self.request.get('x_log_context', {})
 
         if self.request.id:
-            if ctx.get('request_id'):
-                ctx['parent_request_id'] = ctx['request_id']
-
-            ctx['task_id'] = ctx['request_id'] = self.request.id
+            ctx['task_id'] = ctx['request_id'] = self.request.id.replace('-', '')
 
             if not ctx.get('trace_id'):
                 ctx['trace_id'] = ctx['request_id']
