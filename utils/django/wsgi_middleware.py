@@ -23,7 +23,7 @@ def trace(app, request_header_name, var_name, generate_on_empty=True):
 
         if not value:
             if generate_on_empty:
-                value = str(uuid.uuid4())
+                value = str(uuid.uuid4()).replace('-', '')
             else:
                 return app(environ, start_response)
 
