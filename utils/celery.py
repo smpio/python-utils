@@ -31,7 +31,6 @@ class TracingMixin:
 
         if self.request.id:
             ctx['request_id'] = self.request.id.replace('-', '')
-
             if not ctx.get('trace_id'):
                 ctx['trace_id'] = ctx['request_id']
 
