@@ -1,3 +1,8 @@
+import logging
+
+log = logging.getLogger(__name__)
+
+
 def use_real_ip_header(get_response):
     """
     Set REMOTE_ADDR to value from X-Real-IP as we assume that all requests pass through reverse proxy first.
@@ -35,3 +40,27 @@ def add_trace_id_response_header(get_response):
             pass
         return response
     return middleware
+
+
+def log_request(get_response):
+    def is_ctype_supported(ctype):
+        return ctype in {'application/x-www-form-urlencoded', 'application/json'} or ctype.startswith('text/')
+
+    def middeware(request):
+        body = None
+
+        try:
+            if request.body and is_ctype_supported(request.content_type):
+                body = request.body.decode(request.encoding or 'utf-8')
+                if len(body) > 1000:
+                    body = body[:1000] + ' (truncated)'
+        except Exception:
+            log.exception('Failed to parse request body')
+
+        if body:
+            log.debug('%s %s [%s] %s', request.method, request.get_full_path(), request.content_type, body)
+        else:
+            log.debug('%s %s', request.method, request.get_full_path())
+
+        return get_response(request)
+    return middeware

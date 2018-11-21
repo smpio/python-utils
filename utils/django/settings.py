@@ -88,6 +88,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'utils.django.middleware.log_request',
     'utils.django.middleware.add_trace_id_response_header',
 ]
 
