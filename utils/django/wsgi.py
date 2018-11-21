@@ -10,6 +10,7 @@ def get_wsgi_application(preinit=default_behaviour):
     app = get_wsgi_application()
     app = wsgi_middleware.trace(app, 'X-Trace-ID', 'trace_id')
     app = wsgi_middleware.trace(app, 'X-Request-ID', 'request_id')
+    app = wsgi_middleware.trace(app, 'X-Parent-Request-ID', 'parent_request_id', generate_on_empty=False)
     app = wsgi_middleware.XScriptName(app)
 
     if getattr(settings, 'RAVEN_CONFIG', None):
