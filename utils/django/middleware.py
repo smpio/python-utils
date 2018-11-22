@@ -1,5 +1,7 @@
 import logging
 
+from django.core.exceptions import RequestDataTooBig
+
 log = logging.getLogger(__name__)
 
 
@@ -50,10 +52,12 @@ def log_request(get_response):
         body = None
 
         try:
-            if request.body and is_ctype_supported(request.content_type):
+            if is_ctype_supported(request.content_type) and request.body:
                 body = request.body.decode(request.encoding or 'utf-8')
                 if len(body) > 1000:
                     body = body[:1000] + ' (truncated)'
+        except RequestDataTooBig:
+            body = '(too big)'
         except Exception:
             log.exception('Failed to parse request body')
 
