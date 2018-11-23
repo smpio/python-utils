@@ -4,17 +4,16 @@ default_behaviour = type('default_behaviour', (), {})()
 
 
 def get_wsgi_application(preinit=default_behaviour):
-    from django.conf import settings
     from django.core.wsgi import get_wsgi_application
 
     app = get_wsgi_application()
+
+    # Every next middeware wraps previous, so the last middeware runs first.
+    app = wsgi_middleware.LogErrors(app)
     app = wsgi_middleware.trace(app, 'X-Trace-ID', 'trace_id')
     app = wsgi_middleware.trace(app, 'X-Request-ID', 'request_id')
     app = wsgi_middleware.trace(app, 'X-Parent-Request-ID', 'parent_request_id', generate_on_empty=False)
     app = wsgi_middleware.XScriptName(app)
-
-    if getattr(settings, 'RAVEN_CONFIG', None):
-        app = wsgi_middleware.Sentry(app)
 
     if preinit is default_behaviour:
         from django.conf import settings

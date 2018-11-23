@@ -1,4 +1,8 @@
-from raven.contrib.django.raven_compat.middleware.wsgi import Sentry  # noqa
+import logging
+
+from raven.contrib.django.raven_compat.middleware.wsgi import Sentry
+
+log = logging.getLogger(__name__)
 
 
 class XScriptName:
@@ -31,3 +35,14 @@ def trace(app, request_header_name, var_name, generate_on_empty=True):
             return app(environ, start_response)
 
     return middleware
+
+
+class LogErrors(Sentry):
+    """
+    Sentry is used as base class to set HTTP request context that is sent to sentry.
+    But instead of calling captureException in handle_exception directly, log exception.
+    Without this we won't have log context and exception will not be logged in other logs.
+    """
+
+    def handle_exception(self, environ=None):
+        log.exception('Low-level error during request handling')
