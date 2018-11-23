@@ -4,7 +4,7 @@ import warnings
 
 import environ
 
-from utils.log_config import get_logging_config
+from utils.log_config import LoggingConfig
 
 
 def _iter_stack_modules():
@@ -158,9 +158,12 @@ USE_TZ = False
 ###
 # Logging
 ###
-LOGGING = get_logging_config(provider=env('LOGGING'),
-                             log_sql=env('SQL_LOGGING'),
-                             enable_sentry=bool(env('SENTRY_DSN')))
+LOGGING = LoggingConfig()
+LOGGING.enable_handler(env('LOGGING'))
+if env('SENTRY_DSN'):
+    LOGGING.enable_handler('sentry_django')
+if not env('SQL_LOGGING'):
+    LOGGING.set_logger_level('django.db.backends', 'INFO')
 
 
 ###
