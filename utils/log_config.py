@@ -23,6 +23,9 @@ class LoggingConfig(dict):
             'os_env_vars': {
                 '()': 'utils.log_filters.OsEnvVars',
             },
+            'clear_celery_context': {
+                '()': 'utils.log_filters.ClearCeleryContext',
+            },
         },
         'handlers': {},
         'loggers': defaultdict(dict, {
@@ -30,8 +33,15 @@ class LoggingConfig(dict):
                 'level': 'NOTSET',
                 'handlers': set(),
             },
+            'celery.app.trace': {
+                'filters': ['clear_celery_context'],
+            },
         }),
     }
+
+    # Can't attach filters to root logger, as they don't propagate
+    # https://www.saltycrane.com/blog/2014/02/python-logging-filters-do-not-propagate-like-handlers-and-levels-do/
+    global_filters = ['set_context', 'os_env_vars']
 
     def __init__(self):
         super().__init__(copy.deepcopy(self.base_config))
@@ -75,7 +85,7 @@ class LoggingConfig(dict):
 
     def add_handler(self, name, config):
         config = copy.deepcopy(config)
-        config['filters'] = list(self['filters'].keys())
+        config['filters'] = list(self.global_filters)
         self.known_handlers[name] = config
 
     def enable_handler(self, name, **kwargs):

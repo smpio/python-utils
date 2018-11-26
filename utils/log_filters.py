@@ -34,3 +34,12 @@ class OsEnvVars:
     def filter(self, record):
         record.__dict__.update(self.data)
         return True
+
+
+class ClearCeleryContext:
+    def filter(self, record):
+        try:
+            del record.data
+        except AttributeError:
+            pass
+        return True
