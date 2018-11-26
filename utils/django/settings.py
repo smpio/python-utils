@@ -42,7 +42,6 @@ env = environ.Env(
     SENTRY_DSN=(str, None),
     SMP_BASE_URL=(str, 'https://api.smp.io/'),
     SMP_MQ_URL=(str, 'amqps://mq.smp.io:5671/'),
-    USE_REAL_IP_HEADER=(bool, True),
 )
 
 if env('DEV_ENV'):
@@ -91,9 +90,6 @@ MIDDLEWARE = [
     'utils.django.middleware.log_request',
     'utils.django.middleware.add_trace_id_response_header',
 ]
-
-if env('USE_REAL_IP_HEADER'):
-    MIDDLEWARE.insert(0, 'utils.django.middleware.use_real_ip_header')
 
 APPEND_SLASH = False
 ROOT_URLCONF = PROJECT_NAME + '.urls'

@@ -14,6 +14,7 @@ def get_wsgi_application(preinit=default_behaviour):
     app = wsgi_middleware.trace(app, 'X-Request-ID', 'request_id')
     app = wsgi_middleware.trace(app, 'X-Parent-Request-ID', 'parent_request_id', generate_on_empty=False)
     app = wsgi_middleware.XScriptName(app)
+    app = wsgi_middleware.real_ip(app)
 
     if preinit is default_behaviour:
         from django.conf import settings
@@ -35,7 +36,7 @@ def _preinit_application(app):
         'REQUEST_METHOD': 'GET',
         'PATH_INFO': '/healthz',
         'SERVER_PORT': '80',
-        'HTTP_X_REAL_IP': '127.0.0.1',  # required for utils.django.middleware.use_real_ip_header
+        'HTTP_X_REAL_IP': '127.0.0.1',  # required for wsgi_middleware.real_ip
     })
 
     def start_response(*args):

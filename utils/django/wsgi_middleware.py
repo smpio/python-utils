@@ -16,6 +16,34 @@ class XScriptName:
         return self.app(environ, start_response)
 
 
+def real_ip(app):
+    """
+    Set REMOTE_ADDR to value of X-Real-IP as we assume that all requests pass through reverse proxy first.
+    If header is not set, exception is raised indicating configuration problem.
+
+    Exception is not raised if request scheme is http, this is useful for in-cluster requests and debugging. Anyway
+    the connection is not protected in this case.
+    """
+
+    def middleware(environ, start_response):
+        try:
+            real_ip = environ['HTTP_X_REAL_IP']
+        except KeyError:
+            if environ['wsgi.url_scheme'] != 'http':
+                if environ.get('HTTP_X_SENT_FROM') == 'nginx-ingress-controller':
+                    # Nginx ingress controller sets X-Sent-From for auth requests
+                    # also it sets X-Scheme to original scheme (https). But doesn't set X-Real-IP.
+                    # We should not raise error in this case.
+                    pass
+                else:
+                    raise
+        else:
+            environ['REMOTE_ADDR'] = real_ip
+        return app(environ, start_response)
+
+    return middleware
+
+
 def trace(app, request_header_name, var_name, generate_on_empty=True):
     import uuid
     from utils.log_context import log_context
