@@ -8,10 +8,14 @@ _default = object()
 
 
 @contextlib.contextmanager
-def log_context(**kwargs):
+def log_context(_decorate_exceptions=False, **kwargs):
     try:
         _context.__dict__.update(kwargs)
         yield
+    except BaseException as e:
+        if _decorate_exceptions:
+            e._log_context = dict(_context.__dict__)
+        raise e
     finally:
         for k in kwargs:
             try:

@@ -7,7 +7,14 @@ class SetContext:
         self.context = _context
 
     def filter(self, record):
+        if record.exc_info:
+            exc = record.exc_info[1]
+            exc_context = getattr(exc, '_log_context')
+            if exc_context:
+                record.__dict__.update(exc_context)
+
         record.__dict__.update(self.context.__dict__)
+
         return True
 
 
