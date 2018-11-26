@@ -34,7 +34,7 @@ class TracingMixin:
             if not ctx.get('trace_id'):
                 ctx['trace_id'] = ctx['request_id']
 
-        with log_context(**ctx):
+        with log_context(_decorate_exceptions=True, **ctx):
             return super().__call__(*args, **kwargs)
 
 
