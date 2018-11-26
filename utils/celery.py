@@ -35,7 +35,10 @@ class TracingMixin:
                 ctx['trace_id'] = ctx['request_id']
 
         with log_context(_decorate_exceptions=True, **ctx):
-            return super().__call__(*args, **kwargs)
+            log.info('Task %s started', self.name)
+            ret = super().__call__(*args, **kwargs)
+            log.info('Task %s finished', self.name)
+            return ret
 
 
 class TimeLimitPropertiesMixin:
