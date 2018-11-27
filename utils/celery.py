@@ -11,7 +11,7 @@ class TracingMixin:
     def apply_async(self, *args, **kwargs):
         from .log_context import context
 
-        headers = kwargs.get('headers', {})
+        headers = kwargs.get('headers') or {}
         kwargs['headers'] = headers
 
         ctx = headers.get('x-log-context', {})
