@@ -38,8 +38,8 @@ class OsEnvVars:
 
 class ClearCeleryContext:
     def filter(self, record):
-        try:
+        if hasattr(record, 'data'):
+            if record.data.get('description') == 'raised unexpected':
+                return False  # logged by utils.celery.TracingMixin
             del record.data
-        except AttributeError:
-            pass
         return True

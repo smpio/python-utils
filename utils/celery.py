@@ -1,5 +1,7 @@
 import logging
 
+from celery import exceptions
+
 from .log_context import log_context
 
 log = logging.getLogger(__name__)
@@ -34,10 +36,18 @@ class TracingMixin:
             if not ctx.get('trace_id'):
                 ctx['trace_id'] = ctx['request_id']
 
-        with log_context(_decorate_exceptions=True, **ctx):
+        with log_context(**ctx):
             log.info('Task %s started', self.name)
-            ret = super().__call__(*args, **kwargs)
-            log.info('Task %s finished', self.name)
+
+            try:
+                ret = super().__call__(*args, **kwargs)
+            except Exception as e:
+                if not isinstance(e, (exceptions.Reject, exceptions.Ignore, exceptions.Retry)):
+                    log.exception('Unhandled exception in task %s', self.name)
+                raise
+            else:
+                log.info('Task %s finished', self.name)
+
             return ret
 
 
