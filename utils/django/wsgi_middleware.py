@@ -45,8 +45,7 @@ def real_ip(app):
 
 
 def trace(app, request_header_name, var_name, generate_on_empty=True):
-    import uuid
-    from utils.log_context import log_context
+    from utils.log_context import log_context, generate_request_id
 
     env_var_name = 'HTTP_' + request_header_name.upper().replace('-', '_')
 
@@ -55,7 +54,7 @@ def trace(app, request_header_name, var_name, generate_on_empty=True):
 
         if not value:
             if generate_on_empty:
-                value = str(uuid.uuid4()).replace('-', '')
+                value = generate_request_id()
             else:
                 return app(environ, start_response)
 
