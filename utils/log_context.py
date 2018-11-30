@@ -9,7 +9,15 @@ _default = object()
 
 @contextlib.contextmanager
 def log_context(_decorate_exceptions=False, **kwargs):
+    saved_ctx = {}
+
     try:
+        for k, v in kwargs.items():
+            try:
+                saved_ctx[k] = getattr(_context, k)
+            except AttributeError:
+                pass
+
         _context.__dict__.update(kwargs)
         yield
     except BaseException as e:
@@ -19,9 +27,12 @@ def log_context(_decorate_exceptions=False, **kwargs):
     finally:
         for k in kwargs:
             try:
-                delattr(_context, k)
-            except AttributeError:
-                pass
+                setattr(_context, k, saved_ctx[k])
+            except KeyError:
+                try:
+                    delattr(_context, k)
+                except AttributeError:
+                    pass
 
 
 def get_context_var(name, default=_default):
