@@ -1,3 +1,4 @@
+import uuid
 import threading
 import contextlib
 
@@ -43,6 +44,25 @@ def get_context_var(name, default=_default):
             raise
         else:
             return default
+
+
+def generate_request_id():
+    return str(uuid.uuid4()).replace('-', '')
+
+
+@contextlib.contextmanager
+def new_request_context():
+    ctx = {}
+
+    try:
+        ctx['parent_request_id'] = context.request_id
+    except AttributeError:
+        pass
+
+    ctx['request_id'] = generate_request_id()
+
+    with log_context(**ctx):
+        yield
 
 
 class _ContextReader:
