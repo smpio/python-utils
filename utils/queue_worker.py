@@ -21,7 +21,6 @@ class QueueWorkerThread:
         :param thread_name:       will be auto-generated if not specified
         :param shutdown_timeout:  wait after main thread terminated before terminate worker
         """
-        _check_threads()
         self._queue = Queue(-1)
         self._lock = threading.Lock()
         self._thread = None
@@ -62,8 +61,8 @@ class QueueWorkerThread:
                 # add or remove items
                 size = self._queue.qsize()
 
-                log.debug("Attempting to send %i pending error messages", size)
-                log.debug("Waiting up to %s seconds", timeout)
+                log.debug('Attempting to finish %i pending tasks', size)
+                log.debug('Waiting up to %s seconds', timeout)
 
                 self._timed_queue_join(timeout - initial_timeout)
 
@@ -139,22 +138,3 @@ class QueueWorkerThread:
                 self._queue.task_done()
 
             sleep(0)
-
-
-def _check_threads():
-    try:
-        from uwsgi import opt
-    except ImportError:
-        return
-
-    # When `threads` is passed in as a uwsgi option,
-    # `enable-threads` is implied on.
-    if 'threads' in opt:
-        return
-
-    if str(opt.get('enable-threads', '0')).lower() in ('false', 'off', 'no', '0'):
-        from warnings import warn
-        warn(Warning('We detected the use of uwsgi with disabled threads.  '
-                     'This will cause issues with the transport you are '
-                     'trying to use.  Please enable threading for uwsgi.  '
-                     '(Enable the "enable-threads" flag).'))
