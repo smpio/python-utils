@@ -3,6 +3,7 @@ from django.db import DEFAULT_DB_ALIAS, connections
 from django.core.management import call_command
 from django.db.migrations.loader import MigrationLoader
 from django.core.management.base import BaseCommand, CommandError
+from django.contrib.postgres.operations import CreateExtension
 
 
 class Command(BaseCommand):
@@ -94,6 +95,7 @@ class Command(BaseCommand):
             migrations.AlterIndexTogether,
             migrations.AlterModelManagers,
             migrations.AlterModelOptions,
+            CreateExtension,
         )
 
         if isinstance(op, safe_ops):
@@ -112,4 +114,5 @@ class Command(BaseCommand):
         if isinstance(op, migrations.AlterUniqueTogether) and (m.app_label, op.name) in self.new_models:
             return
 
-        self.errors.append(f'Operation {op} in {m} looks unsafe. Consider to set Migration.predeploy_safe if it is OK.')
+        self.errors.append(f'Operation {op} in {m} looks unsafe.'
+                           'Consider to set Migration.predeploy_safe if it is really safe.')
