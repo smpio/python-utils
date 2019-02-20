@@ -1,9 +1,16 @@
 import itertools
+
+from django.utils.translation import ugettext_lazy as _
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
+
+from .models import USER_LANGUAGES_ENABLED
 
 
 class UserAdmin(DjangoUserAdmin):
-    pass
+    if USER_LANGUAGES_ENABLED:
+        list_display = DjangoUserAdmin.list_display + ('language',)
+        list_filter = DjangoUserAdmin.list_filter + ('language',)
+        fieldsets = DjangoUserAdmin.fieldsets + ((_('Preferences'), {'fields': ('language',)}),)
 
 
 for fs_name, fs_options in itertools.chain(UserAdmin.fieldsets, UserAdmin.add_fieldsets):
