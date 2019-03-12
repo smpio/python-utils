@@ -1,7 +1,47 @@
-import enum
+import inspect
+from enum import Enum as BaseEnum
+from enum import EnumMeta as BaseEnumMeta
+from enum import _EnumDict
+
+from django.utils.encoding import force_text
 
 
-class AutoNameEnum(enum.Enum):
+class EnumMeta(BaseEnumMeta):
+    def __new__(mcs, name, bases, attrs):
+        Labels = attrs.get('Labels')
+
+        if Labels is not None and inspect.isclass(Labels):
+            del attrs['Labels']
+            if hasattr(attrs, '_member_names'):
+                attrs._member_names.remove('Labels')
+
+        obj = BaseEnumMeta.__new__(mcs, name, bases, attrs)
+        for m in obj:
+            try:
+                m.label = getattr(Labels, m.name)
+            except AttributeError:
+                m.label = m.name.replace('_', ' ').title()
+
+        return obj
+
+
+class Enum(EnumMeta('Enum', (BaseEnum,), _EnumDict())):
+    @classmethod
+    def choices(cls):
+        """
+        Returns a list formatted for use as field choices.
+        (See https://docs.djangoproject.com/en/dev/ref/models/fields/#choices)
+        """
+        return tuple((m.value, m.label) for m in cls)
+
+    def __str__(self):
+        """
+        Show our label when Django uses the Enum for displaying in a view
+        """
+        return force_text(self.label)
+
+
+class AutoNameEnum(Enum):
     def _generate_next_value_(name, start, count, last_values):
         return name
 
@@ -28,3 +68,8 @@ class CaseInsensitiveAutoNameEnum(AutoNameEnum):
         if isinstance(other, str):
             other = other.lower()
         return super().__eq__(other)
+
+
+class IntEnum(int, Enum):
+    def __str__(self):
+        return force_text(self.label)
