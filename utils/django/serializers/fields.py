@@ -42,7 +42,7 @@ class EnumField(ChoiceField):
     def __init__(self, **kwargs):
         self.enum_class = kwargs.pop('enum_class')
         kwargs.pop('choices', None)
-        super().__init__(tuple((m.value, m.label) for m in self.enum_class), **kwargs)
+        super().__init__(tuple((m.value, m.name) for m in self.enum_class), **kwargs)
 
     def to_internal_value(self, data):
         if data == '' and self.allow_blank:
