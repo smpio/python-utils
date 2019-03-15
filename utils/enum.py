@@ -1,31 +1,29 @@
 import inspect
-from enum import Enum as BaseEnum
-from enum import EnumMeta as BaseEnumMeta
-from enum import _EnumDict
+import enum
 
 from django.utils.encoding import force_text
 
 
-class EnumMeta(BaseEnumMeta):
+class EnumMeta(enum.EnumMeta):
     def __new__(mcs, name, bases, attrs):
-        Labels = attrs.get('Labels')
+        labels = attrs.get('Labels')
 
-        if Labels is not None and inspect.isclass(Labels):
-            del attrs['Labels']
+        if labels is not None and inspect.isclass(labels):
+            attrs.pop('Labels')
             if hasattr(attrs, '_member_names'):
                 attrs._member_names.remove('Labels')
 
-        obj = BaseEnumMeta.__new__(mcs, name, bases, attrs)
+        obj = enum.EnumMeta.__new__(mcs, name, bases, attrs)
         for m in obj:
             try:
-                m.label = getattr(Labels, m.name)
+                m.label = getattr(labels, m.name)
             except AttributeError:
                 m.label = m.name.replace('_', ' ').title()
 
         return obj
 
 
-class Enum(EnumMeta('Enum', (BaseEnum,), _EnumDict())):
+class Enum(EnumMeta('Enum', (enum.Enum,), enum._EnumDict())):
     @classmethod
     def choices(cls):
         """

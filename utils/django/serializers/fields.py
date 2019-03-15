@@ -1,5 +1,3 @@
-from django.utils import six
-
 from rest_framework.serializers import CharField
 from rest_framework.serializers import ChoiceField
 
@@ -51,7 +49,7 @@ class EnumField(ChoiceField):
             return ''
 
         try:
-            return self.choice_strings_to_values[six.text_type(data)]
+            return self.choice_strings_to_values[data]
         except KeyError:
             self.fail('invalid', input=data)
 

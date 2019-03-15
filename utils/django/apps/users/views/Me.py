@@ -4,6 +4,9 @@ from rest_framework import generics
 from .. import serializers
 
 
+User = get_user_model()
+
+
 class MeView(generics.RetrieveUpdateAPIView):
     """
     get: Get current user details
@@ -11,7 +14,7 @@ class MeView(generics.RetrieveUpdateAPIView):
     patch: Set current user details
     """
 
-    queryset = get_user_model().objects.none()
+    queryset = User.objects.none()
     serializer_class = serializers.UserSerializer
     filter_backends = []
 
