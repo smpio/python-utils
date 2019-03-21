@@ -77,7 +77,7 @@ class LoggingConfig(dict):
 
         # GELF UDP handler
         self.add_handler('gelf', {
-            'class': 'graypy.GELFHandler',
+            'class': 'graypy.GELFUDPHandler',
             'host': os.environ.get('GELF_HOST'),
             'port': int(os.environ.get('GELF_PORT', 12201)),
             'debugging_fields': False,
