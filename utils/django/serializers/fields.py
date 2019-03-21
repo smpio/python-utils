@@ -32,3 +32,28 @@ class ChoiceDisplayField(ChoiceField):
 class PasswordField(CharField):
     def to_representation(self, value):
         return '*' * 6
+
+
+class EnumField(ChoiceField):
+    default_error_messages = {
+        'invalid': '"{input}" is not a valid value.'
+    }
+
+    def __init__(self, **kwargs):
+        self.enum_class = kwargs.pop('enum_class')
+        kwargs.pop('choices', None)
+        super().__init__(tuple((m.value, m.name) for m in self.enum_class), **kwargs)
+
+    def to_internal_value(self, data):
+        if data == '' and self.allow_blank:
+            return ''
+
+        try:
+            return self.choice_strings_to_values[str(data)]
+        except KeyError:
+            self.fail('invalid', input=data)
+
+    def to_representation(self, value):
+        if not value:
+            return None
+        return value

@@ -1,7 +1,10 @@
+from django.contrib.auth import get_user_model
 from rest_framework import generics
 
 from .. import serializers
-from .. import models
+
+
+User = get_user_model()
 
 
 class MeView(generics.RetrieveUpdateAPIView):
@@ -11,7 +14,7 @@ class MeView(generics.RetrieveUpdateAPIView):
     patch: Set current user details
     """
 
-    queryset = models.User.objects.none()
+    queryset = User.objects.none()
     serializer_class = serializers.UserSerializer
     filter_backends = []
 

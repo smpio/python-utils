@@ -43,7 +43,3 @@ class AbstractUser(DjangoAbstractUser):
     objects = UserManager()
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
-
-
-class User(AbstractUser):
-    pass
