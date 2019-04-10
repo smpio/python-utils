@@ -33,6 +33,13 @@ class EnumField(models.SmallIntegerField):
 
         return self.enum_class(super().to_python(value))
 
+    def deconstruct(self):
+        name, path, args, kwargs = super(EnumField, self).deconstruct()
+        if 'choices' in kwargs:
+            kwargs.pop('choices')
+        kwargs['enum_class'] = self.enum_class
+        return name, path, args, kwargs
+
 
 def enum2choices(enum):
     return [(item, item.name) for item in enum]
