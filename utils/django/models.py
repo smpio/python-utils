@@ -11,8 +11,7 @@ class EnumField(models.SmallIntegerField):
     """
     def __init__(self, *args, **kwargs):
         if 'choices' not in kwargs:
-            # TODO: remove support for choices_enum
-            enum_class = kwargs.pop('enum_class', None) or kwargs.pop('choices_enum')
+            enum_class = kwargs.pop('enum_class', None)
             if not isinstance(enum_class, EnumMeta):
                 raise TypeError(f'Excpected {EnumMeta.__name__}, got {type(enum_class).__name__}')
             self.enum_class = enum_class
