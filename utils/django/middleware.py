@@ -23,7 +23,6 @@ def add_trace_id_response_header(get_response):
 class LogRequestMiddleware:
     _sanitized_value = '***'
     _sanitizeable_keys = {'password', 'token', }
-    _sanitize_funcs_by_ctype_map = {}
 
     def __init__(self, get_response):
         self.get_response = get_response
