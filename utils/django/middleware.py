@@ -20,62 +20,25 @@ def add_trace_id_response_header(get_response):
     return middleware
 
 
-def log_request(get_response):
+class LogRequestMiddleware:
     _sanitized_value = '***'
     _sanitizeable_keys = {'password', 'token', }
 
-    def _sanitize_dict_deep(data):
-        for k in data:
-            if k in _sanitizeable_keys:
-                data[k] = _sanitized_value
-                continue
-            v = data[k]
-            if isinstance(v, dict):
-                data[k] = _sanitize_dict_deep(v)
-        return data
+    def __init__(self, get_response):
+        self.get_response = get_response
+        self._sanitize_funcs_by_ctype_map = {
+            'application/json': self._sanitize_json,
+            'application/x-www-form-urlencoded': self._sanitize_x_www_form_urlencoded,
+        }
 
-    _sanitize_funcs_by_ctype_map = {}
-
-    def _sanitize_json(body):
-        data = json.loads(body)
-        data_sanitized = _sanitize_dict_deep(data)
-        body_sanitized = json.dumps(data_sanitized, indent=None, separators=(',', ':'))
-        return body_sanitized
-
-    _sanitize_funcs_by_ctype_map['application/json'] = _sanitize_json
-
-    def _sanitize_x_www_form_urlencoded(body):
-        data = dict(urllib.parse.parse_qsl(body))
-        data_sanitized = _sanitize_dict_deep(data)
-        body_sanitized = urllib.parse.urlencode(data_sanitized)
-        return body_sanitized
-
-    _sanitize_funcs_by_ctype_map['application/x-www-form-urlencoded'] = _sanitize_x_www_form_urlencoded
-
-    def sanitize(body, content_type):
-        # noinspection PyBroadException
-        try:
-            sanitize_func = _sanitize_funcs_by_ctype_map.get(content_type)
-            if not sanitize_func:
-                return body
-            for sanitizeable_key in _sanitizeable_keys:
-                if sanitizeable_key in body:
-                    return sanitize_func(body)
-        except Exception:
-            log.exception('Failed to sanitize request body')
-        return body
-
-    def is_ctype_supported(ctype):
-        return ctype in {'application/x-www-form-urlencoded', 'application/json'} or ctype.startswith('text/')
-
-    def middeware(request):
+    def __call__(self, request):
         body = None
 
         # noinspection PyBroadException
         try:
-            if is_ctype_supported(request.content_type) and request.body:
+            if self.is_ctype_supported(request.content_type) and request.body:
                 body = request.body.decode(request.encoding or 'utf-8')
-                body = sanitize(body=body, content_type=request.content_type)
+                body = self.sanitize(body=body, content_type=request.content_type)
                 if len(body) > 1000:
                     body = body[:1000] + ' (truncated)'
         except RequestDataTooBig:
@@ -88,5 +51,42 @@ def log_request(get_response):
         else:
             log.debug('%s %s', request.method, request.get_full_path())
 
-        return get_response(request)
-    return middeware
+        return self.get_response(request)
+
+    def is_ctype_supported(self, ctype):
+        return ctype in self._sanitize_funcs_by_ctype_map or ctype.startswith('text/')
+
+    def sanitize(self, body, content_type):
+        # noinspection PyBroadException
+        try:
+            sanitize_func = self._sanitize_funcs_by_ctype_map.get(content_type)
+            if not sanitize_func:
+                return body
+            for sanitizeable_key in self._sanitizeable_keys:
+                if sanitizeable_key in body:
+                    return sanitize_func(body)
+        except Exception:
+            log.exception('Failed to sanitize request body')
+        return body
+
+    def _sanitize_json(self, body):
+        data = json.loads(body)
+        data_sanitized = self._sanitize_dict_deep(data)
+        body_sanitized = json.dumps(data_sanitized, indent=None, separators=(',', ':'))
+        return body_sanitized
+
+    def _sanitize_x_www_form_urlencoded(self, body):
+        data = dict(urllib.parse.parse_qsl(body))
+        data_sanitized = self._sanitize_dict_deep(data)
+        body_sanitized = urllib.parse.urlencode(data_sanitized)
+        return body_sanitized
+
+    def _sanitize_dict_deep(self, data):
+        for k in data:
+            if k in self._sanitizeable_keys:
+                data[k] = self._sanitized_value
+                continue
+            v = data[k]
+            if isinstance(v, dict):
+                data[k] = self._sanitize_dict_deep(v)
+        return data
