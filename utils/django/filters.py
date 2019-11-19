@@ -1,5 +1,7 @@
 # flake8: noqa: F405
 
+from django.db.models.fields import CharField
+from django.forms.fields import CharField as FormCharField
 from django.contrib.postgres.fields import JSONField, ArrayField
 from django_filters.filters import EMPTY_VALUES
 from django_filters.rest_framework import *  # noqa
@@ -10,6 +12,22 @@ from rest_framework.filters import OrderingFilter as DRFOrderingFilter
 
 from .forms.fields import JsonField as JsonFormField
 from .models import EnumField
+
+
+class MyFormCharField(FormCharField):
+    empty_values = (None,)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.empty_value = None
+
+
+class CharFilter(filters.CharFilter):
+    field_class = MyFormCharField
+
+    # def __init__(self, *args, **kwargs):
+    #     super().__init__(*args, **kwargs)
+    #     self.extra.setdefault('empty_value', None)
 
 
 class ChoiceDisplayFilter(TypedChoiceFilter):
@@ -23,7 +41,9 @@ class ChoiceDisplayFilter(TypedChoiceFilter):
                 (name, name) for value, name in choices
             ]
             kwargs['coerce'] = self._coerce
+
         super().__init__(*args, **kwargs)
+        self.extra.setdefault('empty_value', None)
 
     def _coerce(self, name):
         return self.choice_names_to_values.get(name)
@@ -74,6 +94,7 @@ class ArrayFilter(BaseCSVFilter):
 class FilterSet(BaseFilterSet):
     FILTER_DEFAULTS = dict(BaseFilterSet.FILTER_DEFAULTS)
     FILTER_DEFAULTS.update({
+        CharField: {'filter_class': CharFilter},
         JSONField: {'filter_class': JsonFilter},
         EnumField: {'filter_class': ChoiceDisplayFilter},
         ArrayField: {'filter_class': ArrayFilter},

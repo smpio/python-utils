@@ -224,6 +224,24 @@ CELERY_TASK_ALWAYS_EAGER = env('CELERY_ALWAYS_EAGER')
 
 
 ###
+# Django Filters
+###
+try:
+    from django_filters import constants
+    from django_filters import fields
+    from django_filters import filters
+except ImportError:
+    pass
+else:
+    constants.EMPTY_VALUES = (None,)
+    fields.EMPTY_VALUES = (None,)
+    filters.EMPTY_VALUES = (None,)
+    del constants
+    del fields
+    del filters
+
+
+###
 # SMP
 ###
 SMP_BASE_URL = env('SMP_BASE_URL')
