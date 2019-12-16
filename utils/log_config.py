@@ -56,6 +56,7 @@ class LoggingConfig(dict):
         self.set_logger_level('amqp', 'INFO')
         self.set_logger_level('pika', 'INFO')
         self.set_logger_level('raven.contrib.django.client.DjangoClient', 'INFO')
+        self.set_logger_level('kubernetes.client.rest', 'INFO')
 
         # Simple console handler for local development
         self.add_handler('console', {
