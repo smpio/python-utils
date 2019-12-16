@@ -229,6 +229,10 @@ SMP_BASE_URL = env('SMP_BASE_URL')
 SMP_MQ_URL = env('SMP_MQ_URL')
 
 if env('DEV_ENV'):
-    import smp  # noqa
-    smp.SmpApiClient.default_timeout = None
-    smp.SmpApiClient.max_tries = 1
+    try:
+        import smp  # noqa
+    except ImportError:
+        pass
+    else:
+        smp.SmpApiClient.default_timeout = None
+        smp.SmpApiClient.max_tries = 1
