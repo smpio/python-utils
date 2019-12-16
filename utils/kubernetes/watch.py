@@ -14,6 +14,7 @@ class WatchEventType(enum.Enum):
     DELETED = 'DELETED'
     BOOKMARK = 'BOOKMARK'
     ERROR = 'ERROR'
+    DONE_INITIAL = '_DONE_INITIAL_'
 
 
 # See this for alternative solution:
@@ -33,6 +34,7 @@ class KubeWatcher:
 
                 if not self.resource_version:
                     yield from self.handle_initial(obj_list)
+                    yield WatchEventType.DONE_INITIAL, None
                 else:
                     yield from self.handle_restart(obj_list)
 
