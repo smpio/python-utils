@@ -56,7 +56,7 @@ class KubeWatcher:
     def _safe_stream(self):
         timeout = random.randint(self.min_watch_timeout, self.min_watch_timeout * 2)
 
-        log.info('Watching events since version %s, timeout %d seconds', self.resource_version, timeout)
+        log.debug('Watching events since version %s, timeout %d seconds', self.resource_version, timeout)
 
         kwargs = {
             'timeout_seconds': timeout,
@@ -71,14 +71,14 @@ class KubeWatcher:
             try:
                 val = next(gen)
             except StopIteration:
-                log.info('Watch connection closed')
+                log.debug('Watch connection closed')
                 break
             except ReadTimeoutError:
-                log.info('Watch timeout')
+                log.debug('Watch timeout')
                 break
             except ValueError:
                 # workaround for the bug https://github.com/kubernetes-client/python-base/issues/57
-                log.info('The resourceVersion for the provided watch is too old. Restarting watch')
+                log.debug('The resourceVersion for the provided watch is too old. Restarting watch')
                 raise RestartWatchException()
             yield val
 
