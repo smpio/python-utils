@@ -1,3 +1,6 @@
+from rest_framework import routers
+
+
 class NoDetailTrailingSlashMixin:
     def get_routes(self, viewset):
         return [self._fix_route(route) for route in super().get_routes(viewset)]
@@ -8,3 +11,7 @@ class NoDetailTrailingSlashMixin:
             return route._replace(url=route.url.replace('{trailing_slash}', ''))
         else:
             return route
+
+
+class Router(NoDetailTrailingSlashMixin, routers.DefaultRouter):
+    pass
