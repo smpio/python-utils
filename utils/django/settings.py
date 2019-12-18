@@ -188,9 +188,14 @@ if env('SENTRY_DSN'):
 # REST Framework
 ###
 REST_FRAMEWORK = {
-    'DEFAULT_RENDERER_CLASSES': (
-        'rest_framework.renderers.JSONRenderer',
-    ),
+    'DEFAULT_RENDERER_CLASSES': [
+        'utils.django.renderers.JSONRenderer'
+    ],
+    'DEFAULT_FILTER_BACKENDS': [
+        'utils.django.filters.FilterBackend',
+        'utils.django.filters.OrderingFilter',
+    ],
+    'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema',
     'DEFAULT_PAGINATION_CLASS': 'utils.django.pagination.CursorPagination',
     'PAGE_SIZE': 100,
 }
