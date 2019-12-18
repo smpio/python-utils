@@ -57,6 +57,7 @@ class LoggingConfig(dict):
         self.set_logger_level('pika', 'INFO')
         self.set_logger_level('raven.contrib.django.client.DjangoClient', 'INFO')
         self.set_logger_level('kubernetes.client.rest', 'INFO')
+        self.set_logger_level('django.utils.autoreload', 'INFO')
 
         # Simple console handler for local development
         self.add_handler('console', {
