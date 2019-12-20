@@ -11,13 +11,3 @@ def estimate_count(model_class):
         row = c.fetchone()
 
     return row[0]
-
-
-def queryset_chunks(qs, chunksize=1000):
-    qs = qs.order_by('pk')
-    last_chunk = list(qs[:chunksize])
-
-    while last_chunk:
-        last_pk = last_chunk[-1].pk
-        yield last_chunk
-        last_chunk = list(qs.filter(pk__gt=last_pk)[:chunksize])
