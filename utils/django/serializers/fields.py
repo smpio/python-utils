@@ -1,5 +1,4 @@
-from rest_framework.serializers import CharField
-from rest_framework.serializers import ChoiceField
+from rest_framework.serializers import CharField, ChoiceField
 
 
 class ChoiceDisplayField(ChoiceField):
@@ -35,6 +34,12 @@ class PasswordField(CharField):
 
 
 class EnumField(ChoiceField):
+    """
+    DEPRECATED
+    due to incorrect processing of enum value is not auto name (i.e. int)
+    I decide to not fix it and replace with ready-to-use solution, i.e
+    https://github.com/HackSoftware/django-enum-choices#postgres-arrayfield-usage
+    """
     default_error_messages = {
         'invalid': '"{input}" is not a valid value.'
     }
