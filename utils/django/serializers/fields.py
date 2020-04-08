@@ -36,7 +36,7 @@ class PasswordField(CharField):
 class EnumField(ChoiceField):
     """
     DEPRECATED
-    due to incorrect processing of enum value is not auto name (i.e. int)
+    due to incorrect processing of enums with not autoname values (i.e. int)
     I decide to not fix it and replace with ready-to-use solution, i.e
     https://github.com/HackSoftware/django-enum-choices#postgres-arrayfield-usage
     """
