@@ -209,6 +209,8 @@ if env('CELERY_BROKER_URL'):
     CELERY_BROKER_URL = env('CELERY_BROKER_URL')
 
 if env('CELERY_RESULT_BACKEND_URL'):
+    # possible false deprecation warning:
+    # > scheduled for removal in version 6.0.0. Use the result_backend instead
     CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND_URL')
 
 if env('DEV_ENV'):
@@ -216,6 +218,8 @@ if env('DEV_ENV'):
 else:
     CELERY_TASK_DEFAULT_QUEUE = 'default'
 
+# possible false deprecation warning:
+# > scheduled for removal in version 6.0.0. Use the timezone instead
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_WORKER_REDIRECT_STDOUTS = False
 CELERY_WORKER_HIJACK_ROOT_LOGGER = False
