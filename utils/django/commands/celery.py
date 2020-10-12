@@ -5,11 +5,11 @@ from django.core.management.base import BaseCommand
 
 class Command(BaseCommand):
     def run_from_argv(self, argv):
-        from celery.bin.celery import main
-        main(self.get_argv(argv))
+        from celery.bin.celery import celery
+        celery(self.get_argv(argv))
 
     def get_argv(self, argv):
-        return ['celery', '-A', self.get_celery_module_name()] + argv[2:]
+        return ['-A', self.get_celery_module_name()] + argv[2:]
 
     def get_celery_module_name(self):
         settings_module = os.environ['DJANGO_SETTINGS_MODULE']
