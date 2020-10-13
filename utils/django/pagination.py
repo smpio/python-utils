@@ -21,4 +21,10 @@ class CursorPagination(CursorPaginationBase):
             response['X-Total-Count'] = self.get_count()
             return response
 
+        # Alternative count for our frontend
+        # because of head request and headers parsing require a lot of refactoring on frontend
+        # or will lead to a code duplication and possible out of tune in response handlers
+        if self._request.method == 'GET' and self._request.GET.get('_total_count', '').lower() == 'true':
+            return Response(data={'total_count': self.get_count()}, status=status.HTTP_200_OK)
+
         return super().get_paginated_response(data=data)
