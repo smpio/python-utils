@@ -15,19 +15,36 @@ class WriteableFieldsMixin:
 
 
 class WriteOnceFieldsMixin:
-    def get_extra_kwargs(self):
-        extra_kwargs = super().get_extra_kwargs()
-
+    def _is_create(self):
         try:
             action = self.context.get('action') or self.context['view'].action
         except KeyError:
-            return extra_kwargs
+            # act most strictly if unknown
+            action = None
+        return action == 'create'
 
-        if action != 'create':
+    def get_extra_kwargs(self):
+        """
+        NOTE: Meta.extra_kwargs won't affect declared fields
+        """
+        extra_kwargs = super().get_extra_kwargs()
+        if not self._is_create():
             write_once_fields = getattr(self.Meta, 'write_once_fields', [])
             for field_name in write_once_fields:
-                kwargs = extra_kwargs.get(field_name, {})
-                kwargs['read_only'] = True
-                extra_kwargs[field_name] = kwargs
-
+                if field_name not in self._declared_fields:
+                    kwargs = extra_kwargs.get(field_name, {})
+                    kwargs['read_only'] = True
+                    extra_kwargs[field_name] = kwargs
         return extra_kwargs
+
+    def get_fields(self):
+        """
+        Handle declared fields which is not affected by Meta.extra_kwargs
+        """
+        fields = super().get_fields()
+        if not self._is_create():
+            write_once_fields = getattr(self.Meta, 'write_once_fields', [])
+            for field_name in write_once_fields:
+                if field_name in self._declared_fields:
+                    fields[field_name].read_only = True
+        return fields
