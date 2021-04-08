@@ -3,6 +3,7 @@ import logging
 import django.db
 from django.conf import settings
 from django.core.cache import cache
+from django.core.exceptions import ImproperlyConfigured
 from rest_framework import views
 from rest_framework import status
 from rest_framework import schemas
@@ -42,16 +43,18 @@ class HealthzView(views.APIView):
             'web': True,
         }
 
-        if settings.DATABASES:
-            try:
-                with django.db.connection.cursor() as cursor:
-                    cursor.execute('SELECT 1')
-                    cursor.fetchone()
-            except Exception:
-                log.exception('Database failure')
-                report['db'] = False
-            else:
-                report['db'] = True
+        try:
+            with django.db.connection.cursor() as cursor:
+                cursor.execute('SELECT 1')
+                cursor.fetchone()
+        except ImproperlyConfigured:
+            # No databases are configured (or the dummy one)
+            pass
+        except Exception:
+            log.exception('Database failure')
+            report['db'] = False
+        else:
+            report['db'] = True
 
         if 'default' in settings.CACHES:
             try:
