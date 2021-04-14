@@ -81,6 +81,8 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_SCHEME', 'https')
 ###
 # General
 ###
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+
 INSTALLED_APPS = [
     PROJECT_NAME + '.App',
 ]
