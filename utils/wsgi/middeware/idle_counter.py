@@ -116,7 +116,16 @@ def read_all_metrics(dirname, fileprefix):
 
 def read_worker_metrics(filename):
     with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as sock:
-        sock.connect(filename)
+        try:
+            sock.connect(filename)
+        except ConnectionRefusedError:
+            # stale socket (worker has been killed)
+            try:
+                os.remove(filename)
+            except OSError:
+                pass
+            return
+
         fp = sock.makefile('r')
         for line in fp:
             pid, tid, idle_time = line.split(':')
