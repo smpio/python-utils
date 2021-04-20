@@ -1,4 +1,5 @@
 from . import wsgi_middleware
+from utils.wsgi.middeware.idle_counter import IdleCounter
 
 default_behaviour = type('default_behaviour', (), {})()
 
@@ -15,6 +16,7 @@ def get_wsgi_application(preinit=default_behaviour):
     app = wsgi_middleware.trace(app, 'X-Parent-Request-ID', 'parent_request_id', generate_on_empty=False)
     app = wsgi_middleware.XScriptName(app)
     app = wsgi_middleware.real_ip(app)
+    app = IdleCounter(app)
 
     if preinit is default_behaviour:
         from django.conf import settings
