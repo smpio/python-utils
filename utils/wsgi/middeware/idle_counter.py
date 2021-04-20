@@ -24,11 +24,23 @@ class IdleCounter:
         self.app = app
         self.ipc_filename_prefix = ipc_filename_prefix
         self.thread_status_map = collections.defaultdict(WorkerStatus)
-        ipc_filename = os.path.join(tempfile.gettempdir(), ipc_filename_prefix + str(os.getpid()))
+
+    def _init(self):
+        # Can't put this in __init__, because `gunicorn --preload` will start the thread in master process before fork.
+        # Using deferred initialization instead.
+        ipc_filename = os.path.join(tempfile.gettempdir(), self.ipc_filename_prefix + str(os.getpid()))
         self.thread = SiblingIPCServerThread(ipc_filename, self.thread_status_map)
         self.thread.start()
 
     def __call__(self, environ, start_response):
+        if environ.get('_smp_preinit'):
+            # skip on preinit, otherwise it will negate the idea of deferred initialization
+            return self.app(environ, start_response)
+
+        if self._init:
+            self._init()
+            self._init = None
+
         tid = threading.get_native_id()
         status = self.thread_status_map[tid]
         with status.count_request_time():

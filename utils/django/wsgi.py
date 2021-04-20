@@ -42,6 +42,7 @@ def _preinit_application(app):
         'PATH_INFO': '/healthz',
         'SERVER_PORT': '80',
         'HTTP_X_REAL_IP': '127.0.0.1',  # required for wsgi_middleware.real_ip
+        '_smp_preinit': True,
     })
 
     def start_response(*args):
