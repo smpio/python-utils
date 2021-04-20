@@ -86,4 +86,4 @@ class MetricsView(views.View):
         if idle_counter:
             yield '# TYPE idle_seconds_total summary'
             for metrics in idle_counter.read_metrics():
-                yield f'idle_seconds_total{{pid={metrics.pid},tid={metrics.tid}}} {metrics.idle_seconds_total}'
+                yield f'idle_seconds_total{{pid="{metrics.pid}",tid="{metrics.tid}"}} {metrics.idle_seconds_total}'
