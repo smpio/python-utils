@@ -2,6 +2,7 @@ import logging
 
 import django.db
 from django.conf import settings
+from django.http import HttpResponse
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured
 from rest_framework import views
@@ -71,3 +72,18 @@ class HealthzView(views.APIView):
             s = status.HTTP_500_INTERNAL_SERVER_ERROR
 
         return Response(report, status=s)
+
+
+class MetricsView(views.View):
+    def get(self, request, *args, **kwargs):
+        response = HttpResponse()
+        response.headers['Content-Type'] = 'text/plain'
+        response.content = '\n'.join(self.format_metrics()).encode('utf8')
+        return response
+
+    def format_metrics(self):
+        idle_counter = self.request.META.get('_smp_idle_counter')
+        if idle_counter:
+            yield '# TYPE idle_seconds_total summary'
+            for metrics in idle_counter.read_metrics():
+                yield f'idle_seconds_total{{pid={metrics.pid}}} {metrics.idle_seconds_total}'

@@ -3,19 +3,26 @@ import stat
 import time
 import socket
 import atexit
+import typing
 import tempfile
 import threading
 import contextlib
+import dataclasses
 import socketserver
 
 # TODO: multiple threads : threading.get_ident()
 
 
+@dataclasses.dataclass
+class Metrics:
+    pid: int
+    idle_seconds_total: float
+
+
 class IdleCounter:
-    def __init__(self, app, ipc_filename_prefix='wsgi_worker.', metrics_uri='/metrics'):
+    def __init__(self, app, ipc_filename_prefix='wsgi_worker.'):
         self.app = app
         self.ipc_filename_prefix = ipc_filename_prefix
-        self.metrics_uri = metrics_uri
         self.status = WorkerStatus()
         ipc_filename = os.path.join(tempfile.gettempdir(), ipc_filename_prefix + str(os.getpid()))
         self.thread = SiblingIPCServerThread(ipc_filename, self.status)
@@ -23,17 +30,10 @@ class IdleCounter:
 
     def __call__(self, environ, start_response):
         with self.status.count_request_time():
-            if self.is_metrics_request(environ):
-                return self.handle_metrics_request(environ, start_response)
             return self.app(environ, start_response)
 
-    def is_metrics_request(self, environ):
-        return environ['REQUEST_METHOD'] == 'GET' and environ['PATH_INFO'] == self.metrics_uri
-
-    def handle_metrics_request(self, environ, start_response):
-        metrics = read_all_metrics(tempfile.gettempdir(), self.ipc_filename_prefix)
-        start_response('200 OK', [('Content-Type', 'text/plain')])
-        return '\n'.join(format_metrics(metrics)).encode('utf8'),
+    def read_metrics(self) -> typing.Iterable[Metrics]:
+        return read_all_metrics(tempfile.gettempdir(), self.ipc_filename_prefix)
 
 
 class WorkerStatus:
@@ -92,15 +92,11 @@ def is_socket(filename):
 
 
 def read_all_metrics(dirname, fileprefix):
-    metrics = {}
-
     for filename in os.listdir(dirname):
         if filename.startswith(fileprefix):
             pid = filename[len(fileprefix):]
             idle_time = read_worker_metrics(os.path.join(dirname, filename))
-            metrics[pid] = idle_time
-
-    return metrics
+            yield Metrics(int(pid), float(idle_time))
 
 
 def read_worker_metrics(filename):
@@ -108,9 +104,3 @@ def read_worker_metrics(filename):
         sock.connect(filename)
         fp = sock.makefile('r')
         return fp.read()
-
-
-def format_metrics(metrics):
-    yield '# TYPE idle_seconds_total summary'
-    for pid, idle_time in metrics.items():
-        yield f'idle_seconds_total{{pid={pid}}} {idle_time}'

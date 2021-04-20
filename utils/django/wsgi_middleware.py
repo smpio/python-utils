@@ -1,3 +1,5 @@
+# TODO: move this to utils.wsgi.middleware
+
 import logging
 
 from raven.contrib.django.raven_compat.middleware.wsgi import Sentry
