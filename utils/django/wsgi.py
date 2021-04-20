@@ -6,6 +6,7 @@ default_behaviour = type('default_behaviour', (), {})()
 
 
 def get_wsgi_application(preinit=default_behaviour):
+    from django.conf import settings
     from django.core.wsgi import get_wsgi_application
 
     app = get_wsgi_application()
@@ -17,13 +18,13 @@ def get_wsgi_application(preinit=default_behaviour):
     app = wsgi_middleware.trace(app, 'X-Parent-Request-ID', 'parent_request_id', generate_on_empty=False)
     app = wsgi_middleware.XScriptName(app)
     app = wsgi_middleware.real_ip(app)
-    app = idle_counter = IdleCounter(app)
-    app = set_environ(app, _smp_idle_counter=idle_counter)
+
+    if not settings.DEBUG:
+        app = idle_counter = IdleCounter(app)
+        app = set_environ(app, _smp_idle_counter=idle_counter)
 
     if preinit is default_behaviour:
-        from django.conf import settings
         preinit = not settings.DEBUG
-
     if preinit:
         _preinit_application(app)
 
