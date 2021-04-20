@@ -8,14 +8,14 @@ import tempfile
 import threading
 import contextlib
 import dataclasses
+import collections
 import socketserver
-
-# TODO: multiple threads : threading.get_ident()
 
 
 @dataclasses.dataclass
 class Metrics:
     pid: int
+    tid: int
     idle_seconds_total: float
 
 
@@ -23,13 +23,15 @@ class IdleCounter:
     def __init__(self, app, ipc_filename_prefix='wsgi_worker.'):
         self.app = app
         self.ipc_filename_prefix = ipc_filename_prefix
-        self.status = WorkerStatus()
+        self.thread_status_map = collections.defaultdict(WorkerStatus)
         ipc_filename = os.path.join(tempfile.gettempdir(), ipc_filename_prefix + str(os.getpid()))
-        self.thread = SiblingIPCServerThread(ipc_filename, self.status)
+        self.thread = SiblingIPCServerThread(ipc_filename, self.thread_status_map)
         self.thread.start()
 
     def __call__(self, environ, start_response):
-        with self.status.count_request_time():
+        tid = threading.get_native_id()
+        status = self.thread_status_map[tid]
+        with status.count_request_time():
             return self.app(environ, start_response)
 
     def read_metrics(self) -> typing.Iterable[Metrics]:
@@ -63,15 +65,18 @@ class WorkerStatus:
 
 
 class SiblingIPCServerThread(threading.Thread):
-    def __init__(self, filename, status):
+    def __init__(self, filename, thread_status_map):
         self.filename = filename
-        self.status = status
+        self.thread_status_map = thread_status_map
         super().__init__(name='IdleCounter_SiblingIPCServerThread', daemon=True)
 
     def run(self):
         class Handler(socketserver.BaseRequestHandler):
             def handle(handler):
-                handler.request.sendall(str(self.status.idle_seconds_total).encode('ascii'))
+                pid = os.getpid()
+                for tid, status in self.thread_status_map.items():
+                    row = f'{pid}:{tid}:{status.idle_seconds_total}\n'
+                    handler.request.sendall(row.encode('ascii'))
 
         self.cleanup()
         atexit.register(self.cleanup)
@@ -94,13 +99,13 @@ def is_socket(filename):
 def read_all_metrics(dirname, fileprefix):
     for filename in os.listdir(dirname):
         if filename.startswith(fileprefix):
-            pid = filename[len(fileprefix):]
-            idle_time = read_worker_metrics(os.path.join(dirname, filename))
-            yield Metrics(int(pid), float(idle_time))
+            yield from read_worker_metrics(os.path.join(dirname, filename))
 
 
 def read_worker_metrics(filename):
     with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as sock:
         sock.connect(filename)
         fp = sock.makefile('r')
-        return fp.read()
+        for line in fp:
+            pid, tid, idle_time = line.split(':')
+            yield Metrics(int(pid), int(tid), float(idle_time))
