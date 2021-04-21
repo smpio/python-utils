@@ -74,7 +74,7 @@ class HealthzView(views.APIView):
         return Response(report, status=s)
 
 
-class MetricsView(views.View):
+class MetriczView(views.View):
     def get(self, request, *args, **kwargs):
         response = HttpResponse()
         response.headers['Content-Type'] = 'text/plain'
