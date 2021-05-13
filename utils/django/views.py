@@ -9,6 +9,7 @@ from rest_framework import views
 from rest_framework import status
 from rest_framework import schemas
 from rest_framework.response import Response
+from rest_framework.schemas.openapi import AutoSchema
 
 from .renderers import OpenAPIRenderer
 
@@ -34,10 +35,31 @@ class SchemaGenerator(schemas.SchemaGenerator):
         return super().get_schema(request=request, public=public)
 
 
+class HealthzSchema(AutoSchema):
+    """ required to make possible tune for drf-spectacular without errors/warnings """
+    _schema = {
+        'type': 'object',
+        'properties': {
+            'web': {'type': 'boolean'},
+            'db': {'type': 'boolean'},
+            'cache': {'type': 'boolean'},
+        },
+        'required': ('web', ),
+        'additionalProperties': False,
+    }
+
+    def get_responses(self, path, method):
+        return {
+            '200': dict(description='If everything is "true"', **self._schema),
+            '500': dict(description='If something is "false"', **self._schema),
+        }
+
+
 class HealthzView(views.APIView):
     """
     Healthcheck
     """
+    schema = HealthzSchema()
 
     def get(self, request):
         report = {
