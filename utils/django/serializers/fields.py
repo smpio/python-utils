@@ -4,7 +4,7 @@ from rest_framework.serializers import ChoiceField
 
 class ChoiceDisplayField(ChoiceField):
     """
-    Serializer field for any model field with "choices" kwargs
+    Serializer field for any model field with "choices" kwarg
     """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

@@ -36,7 +36,7 @@ class SchemaGenerator(schemas.SchemaGenerator):
 
 
 class HealthzSchema(AutoSchema):
-    """ required to make possible tune for drf-spectacular without errors/warnings """
+    """ required to tune for drf-spectacular without warnings """
     _schema = {
         'type': 'object',
         'properties': {
