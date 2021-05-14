@@ -14,6 +14,10 @@ class AutoNameEnum(enum.Enum):
             return self.value == other
         return super().__eq__(other)
 
+    def __hash__(self):
+        # required to be usable as dict key e.g. for serializer field choices
+        return hash(self._name_)
+
 
 class CaseInsensitiveAutoNameEnum(AutoNameEnum):
     def _generate_next_value_(name, start, count, last_values):
@@ -28,3 +32,7 @@ class CaseInsensitiveAutoNameEnum(AutoNameEnum):
         if isinstance(other, str):
             other = other.lower()
         return super().__eq__(other)
+
+    def __hash__(self):
+        # required to be usable as dict key e.g. for serializer field choices
+        return hash(self._name_)

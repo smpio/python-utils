@@ -3,6 +3,9 @@ from rest_framework.serializers import ChoiceField
 
 
 class ChoiceDisplayField(ChoiceField):
+    """
+    Serializer field for any model field with "choices" kwarg
+    """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -12,6 +15,14 @@ class ChoiceDisplayField(ChoiceField):
 
         self.choice_names_to_values = {
             name: value for value, name in self.choices.items()
+        }
+
+        # required to produce valid schema with drf-spectacular
+        self._spectacular_annotation = {
+            'field': {
+                'enum': names,
+                'type': 'string',
+            }
         }
 
     def to_internal_value(self, data):
@@ -26,7 +37,15 @@ class ChoiceDisplayField(ChoiceField):
     def to_representation(self, value):
         if value in ('', None):
             return value
-        return self.choices[value]
+        try:
+            return self.choices[value]
+        except KeyError:
+            # check if already a representation
+            if value in self.choice_names_to_values:
+                # required to allow to deal with enum name instead of enum instance
+                # for more flexibility / robustness
+                return value
+            raise
 
 
 class PasswordField(CharField):
@@ -34,26 +53,12 @@ class PasswordField(CharField):
         return '*' * 6
 
 
-class EnumField(ChoiceField):
-    default_error_messages = {
-        'invalid': '"{input}" is not a valid value.'
-    }
-
-    def __init__(self, **kwargs):
-        self.enum_class = kwargs.pop('enum_class')
-        kwargs.pop('choices', None)
-        super().__init__(tuple((m.value, m.name) for m in self.enum_class), **kwargs)
-
-    def to_internal_value(self, data):
-        if data == '' and self.allow_blank:
-            return ''
-
-        try:
-            return self.choice_strings_to_values[str(data)]
-        except KeyError:
-            self.fail('invalid', input=data)
-
-    def to_representation(self, value):
-        if not value:
-            return None
-        return value
+class EnumField(ChoiceDisplayField):
+    """
+    Serializer field which is actually a wrapper to produce ChoiceDisplayField from enum class
+    """
+    def __init__(self, enum_class, **kwargs):
+        assert 'choices' not in kwargs, '"choices" kwarg restricted in favor to "enum_class"'
+        self._enum_class = enum_class
+        choices = [(i, i.name) for i in self._enum_class]
+        super().__init__(choices=choices, **kwargs)
