@@ -1,4 +1,6 @@
 import logging
+import contextlib
+from collections import defaultdict
 
 from django import db
 
@@ -27,3 +29,40 @@ def retry_on_connection_close(max_tries=3):
                         raise
         return wrapped
     return wrapper
+
+
+@contextlib.contextmanager
+def bulk_save(batch_size=None):
+    to_create = defaultdict(list)
+    to_update = defaultdict(list)
+
+    def save(obj):
+        if obj.pk is None:
+            objs = to_create[obj._meta.model]
+            objs.append(obj)
+            if batch_size is not None and len(objs) >= batch_size:
+                _bulk_create(obj._meta.model, objs)
+                to_create[obj._meta.model] = []
+        else:
+            objs = to_update[obj._meta.model]
+            objs.append(obj)
+            if batch_size is not None and len(objs) >= batch_size:
+                _bulk_update(obj._meta.model, objs)
+                to_update[obj._meta.model] = []
+
+    try:
+        yield save
+    finally:
+        for model, objs in to_create.items():
+            _bulk_create(model, objs)
+        for model, objs in to_update.items():
+            _bulk_update(model, objs)
+
+
+def _bulk_create(model, objs):
+    model.objects.bulk_create(objs)
+
+
+def _bulk_update(model, objs):
+    fields = [f.name for f in model._meta.fields if not f.primary_key]
+    model.objects.bulk_update(objs, fields)
