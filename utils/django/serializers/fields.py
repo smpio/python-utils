@@ -30,7 +30,7 @@ class ChoiceDisplayField(ChoiceField):
             return ''
 
         try:
-            return self.choice_names_to_values[str(data)]
+            return self.choice_names_to_values[str(data)].value
         except KeyError:
             self.fail('invalid_choice', input=data)
 
