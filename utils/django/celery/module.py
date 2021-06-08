@@ -36,7 +36,7 @@ task = partial(app.task, base=Task, ignore_result=True)
 
 
 warnings.filterwarnings('ignore', module='celery.fixups.django',
-                        message='Using settings.DEBUG leads to a memory leak.*')
+                        message=r'.*\bsettings.DEBUG\b.*')
 
 
 if getattr(settings, 'RAVEN_CONFIG', None):
