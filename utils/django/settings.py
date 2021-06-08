@@ -27,6 +27,7 @@ PROJECT_NAME = _get_project_name()
 env = environ.Env(
     DEV_ENV=(bool, True),
     CONTAINER_ENV=(bool, False),
+    DJANGO_DEBUG=(bool, False),
     SECRET_KEY=str,
     DATABASE_URL=(str, 'postgres://postgres@postgres/postgres'),
     RO_DATABASE_URL=(str, None),
@@ -38,6 +39,7 @@ env = environ.Env(
     CELERY_BROKER_URL=(str, 'redis://redis/1'),
     CELERY_RESULT_BACKEND_URL=(str, 'redis://redis/2'),
     CELERY_ALWAYS_EAGER=(bool, False),
+    CELERY_DEFAULT_QUEUE=(str, 'default'),
     BUILD_ID=(str, None),
     SENTRY_DSN=(str, None),
     SMP_BASE_URL=(str, 'https://api.smp.io/'),
@@ -50,14 +52,18 @@ if env('DEV_ENV'):
     environ.Env.read_env('.env')
 
     env.scheme['SECRET_KEY'] = (str, 'dev')
+    env.scheme['DJANGO_DEBUG'] = (bool, True)
 
     if env('CONTAINER_ENV'):
         env.scheme['DATABASE_URL'] = (str, f'postgres://postgres@postgres/{PROJECT_NAME}')
+        env.scheme['CACHE_URL'] = (str, f'redis://redis/0?key_prefix={PROJECT_NAME}')
     else:
         env.scheme['DATABASE_URL'] = (str, f'postgres://postgres@localhost/{PROJECT_NAME}')
-        for setting_name in ('CACHE_URL', 'CELERY_BROKER_URL', 'CELERY_RESULT_BACKEND_URL'):
-            env.scheme[setting_name] = (str, env.scheme[setting_name][1].replace('//redis', '//localhost'))
+        env.scheme['CACHE_URL'] = (str, f'redis://localhost/0?key_prefix={PROJECT_NAME}')
+        env.scheme['CELERY_BROKER_URL'] = (str, 'redis://localhost/1')
+        env.scheme['CELERY_RESULT_BACKEND_URL'] = (str, 'redis://localhost/2')
 
+    env.scheme['CELERY_DEFAULT_QUEUE'] = (str, PROJECT_NAME)
     env.scheme['SMP_BASE_URL'] = (str, 'http://localhost:7000/')
     env.scheme['SMP_MQ_URL'] = (str, 'amqp://localhost/')
 
@@ -67,7 +73,7 @@ BUILD_ID = env('BUILD_ID')
 ##
 # Debugging
 ##
-DEBUG = env('DEV_ENV')
+DEBUG = env('DJANGO_DEBUG')
 
 
 ###
@@ -127,8 +133,6 @@ CACHES = {
 }
 if env('CACHE_URL'):
     CACHES['default'] = env.cache_url('CACHE_URL')
-    if env('DEV_ENV'):
-        CACHES['default']['KEY_PREFIX'] = PROJECT_NAME
 
 # in case you use session middleware
 SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
@@ -215,11 +219,7 @@ if env('CELERY_RESULT_BACKEND_URL'):
     # > scheduled for removal in version 6.0.0. Use the result_backend instead
     CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND_URL')
 
-if env('DEV_ENV'):
-    CELERY_TASK_DEFAULT_QUEUE = PROJECT_NAME
-else:
-    CELERY_TASK_DEFAULT_QUEUE = 'default'
-
+CELERY_TASK_DEFAULT_QUEUE = env('CELERY_DEFAULT_QUEUE')
 # possible false deprecation warning:
 # > scheduled for removal in version 6.0.0. Use the timezone instead
 CELERY_TIMEZONE = TIME_ZONE
