@@ -102,7 +102,7 @@ class KubeWatcher:
 
         for obj in self._depaginate(obj_list):
             alive_uids.add(obj.metadata.uid)
-            db_obj = self.db[obj.metadata.uid]
+            db_obj = self.db.get(obj.metadata.uid)
             self.db[obj.metadata.uid] = obj
             if db_obj is None:
                 yield WatchEventType.ADDED, obj
