@@ -116,7 +116,12 @@ class KubeWatcher:
                 yield WatchEventType.DELETED, obj
 
     def _depaginate(self, obj_list):
-        # TODO:
+        # TODO: handle pages
+
+        kind = obj_list.kind.removesuffix('List')
+        for obj in obj_list.items:
+            obj.api_version = obj_list.api_version
+            obj.kind = kind
         return obj_list.items
 
 
