@@ -78,7 +78,7 @@ class KubeWatcher:
                 break
             except ValueError:
                 # workaround for the bug https://github.com/kubernetes-client/python-base/issues/57
-                log.debug('The resourceVersion for the provided watch is too old. Restarting watch')
+                log.debug('The resourceVersion for provided watch is too old. Restarting the watch')
                 raise RestartWatchException()
             yield val
 
