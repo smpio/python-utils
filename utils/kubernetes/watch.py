@@ -22,15 +22,19 @@ class WatchEventType(enum.Enum):
 class KubeWatcher:
     min_watch_timeout = 5 * 60
 
-    def __init__(self, list_func):
+    def __init__(self, list_func, namespace=None):
         self.list_func = list_func
+        self.namespace = namespace
         self.resource_version = None
         self.db = {}
 
     def __iter__(self):
         while True:
             try:
-                obj_list = self.list_func()
+                if self.namespace is None:
+                    obj_list = self.list_func()
+                else:
+                    obj_list = self.list_func(namespace=self.namespace)
 
                 if not self.resource_version:
                     yield from self.handle_initial(obj_list)
@@ -64,6 +68,8 @@ class KubeWatcher:
         }
         if self.resource_version:
             kwargs['resource_version'] = self.resource_version
+        if self.namespace is not None:
+            kwargs['namespace'] = self.namespace
 
         w = kubernetes.watch.Watch()
         gen = w.stream(self.list_func, **kwargs)
