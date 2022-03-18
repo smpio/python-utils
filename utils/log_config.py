@@ -1,5 +1,6 @@
 import os
 import copy
+import socket
 from collections import defaultdict
 
 
@@ -78,12 +79,13 @@ class LoggingConfig(dict):
         })
 
         # GELF UDP handler
-        self.add_handler('gelf', {
-            'class': 'graypy.GELFUDPHandler',
-            'host': os.environ.get('GELF_HOST'),
-            'port': int(os.environ.get('GELF_PORT', 12201)),
-            'debugging_fields': False,
-        })
+        if os.environ.get('GELF_HOST'):
+            self.add_handler('gelf', {
+                'class': 'graypy.GELFUDPHandler',
+                'host': socket.gethostbyname(os.environ.get('GELF_HOST')),
+                'port': int(os.environ.get('GELF_PORT', 12201)),
+                'debugging_fields': False,
+            })
 
     def add_handler(self, name, config):
         config = copy.deepcopy(config)
