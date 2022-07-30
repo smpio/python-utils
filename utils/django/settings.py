@@ -46,6 +46,7 @@ env = environ.Env(
     SMP_MQ_URL=(str, 'amqps://mq.smp.io:5671/'),
 )
 
+# See /README.md
 if env('DEV_ENV'):
     print('Django project:', PROJECT_NAME, file=sys.stderr)
     warnings.filterwarnings('ignore', module='environ.environ', message='Error reading .*')
