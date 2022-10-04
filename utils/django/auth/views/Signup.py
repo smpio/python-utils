@@ -29,5 +29,8 @@ class SignupView(generics.CreateAPIView):
 
     def get_success_response(self, user, serializer):
         if self.user_serializer_class:
-            self.default_response.data = self.user_serializer_class(user).data
+            self.default_response.data = self.user_serializer_class(
+                user,
+                context={'request': self.request}
+            ).data
         return self.default_response
