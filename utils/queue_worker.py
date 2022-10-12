@@ -99,8 +99,7 @@ class QueueWorkerThread:
         self._lock.acquire()
         try:
             if not self.is_alive():
-                self._thread = threading.Thread(target=self._target, name=self._thread_name)
-                self._thread.setDaemon(True)
+                self._thread = threading.Thread(target=self._target, name=self._thread_name, daemon=True)
                 self._thread.start()
                 self._thread_for_pid = os.getpid()
         finally:
