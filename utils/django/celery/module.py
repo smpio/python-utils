@@ -39,5 +39,5 @@ warnings.filterwarnings('ignore', module='celery.fixups.django',
                         message=r'.*\bsettings.DEBUG\b.*')
 
 
-if getattr(settings, 'RAVEN_CONFIG', None):
+if getattr(settings, 'SENTRY_DSN', None):
     install_sentry_signals()

@@ -3,7 +3,11 @@ import inspect
 import warnings
 
 import environ
+import sentry_sdk
+from sentry_sdk.integrations.celery import CeleryIntegration
+from sentry_sdk.integrations.django import DjangoIntegration
 
+from utils.django import sentry_processors
 from utils.log_config import LoggingConfig
 
 
@@ -42,6 +46,7 @@ env = environ.Env(
     CELERY_DEFAULT_QUEUE=(str, 'default'),
     BUILD_ID=(str, None),
     SENTRY_DSN=(str, None),
+    SENTRY_TRACES_SAMPLE_RATE=(float, '1.0'),
     SMP_BASE_URL=(str, 'https://api.smp.io/'),
     SMP_MQ_URL=(str, 'amqps://mq.smp.io:5671/'),
 )
@@ -178,17 +183,28 @@ if env('TEST_RUNNER'):
 ###
 # Sentry
 ###
-if env('SENTRY_DSN'):
-    RAVEN_CONFIG = {
-        'dsn': env('SENTRY_DSN'),
-        'processors': [
-            'raven.processors.RemovePostDataProcessor',
-            'raven.processors.RemoveStackLocalsProcessor',
-            'raven.processors.SanitizePasswordsProcessor',
+if sentry_dsn := env('SENTRY_DSN'):
+    SENTRY_PROCESSORS_BEFORE_SEND = [
+        # new SDK doesn't have built-in processors
+        # include your own processors here
+        'utils.django.sentry_processors.sanitize_sensitive_data',
+    ]
+
+    sentry_sdk.init(
+        dsn=sentry_dsn,
+        default_integrations=False,
+        integrations=[
+            CeleryIntegration(),
+            DjangoIntegration(),
+            # LoggingIntegration set manually
         ],
-        'include_versions': False,
-        'release': BUILD_ID,
-    }
+        traces_sample_rate=float(env('SENTRY_TRACES_SAMPLE_RATE')),
+        send_default_pii=True,
+        request_bodies='never',
+        with_locals=False,
+        release=BUILD_ID,
+        before_send=sentry_processors.before_send,
+    )
 
 
 ###

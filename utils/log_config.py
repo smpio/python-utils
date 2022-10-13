@@ -56,7 +56,6 @@ class LoggingConfig(dict):
         self.set_logger_level('kombu', 'INFO')
         self.set_logger_level('amqp', 'INFO')
         self.set_logger_level('pika', 'INFO')
-        self.set_logger_level('raven.contrib.django.client.DjangoClient', 'INFO')
         self.set_logger_level('kubernetes.client.rest', 'INFO')
         self.set_logger_level('django.utils.autoreload', 'INFO')
 
@@ -66,16 +65,13 @@ class LoggingConfig(dict):
             'formatter': 'dev',
         })
 
-        # Sentry handler (reads SENTRY_DSN env var). Better provide kwargs when enabling
         self.add_handler('sentry', {
-            'class': 'raven.handlers.logging.SentryHandler',
+            'class': 'sentry_sdk.integrations.logging.EventHandler',
             'level': 'WARNING',
         })
-
-        # Sentry handler that reads config from django.conf.settings.RAVEN_CONFIG. It also adds request to context
-        self.add_handler('sentry_django', {
-            'class': 'raven.contrib.django.handlers.SentryHandler',
-            'level': 'WARNING',
+        self.add_handler('sentry_breadcrumb', {
+            'class': 'sentry_sdk.integrations.logging.BreadcrumbHandler',
+            'level': 'INFO',
         })
 
         # GELF UDP handler

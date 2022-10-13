@@ -11,8 +11,7 @@ def get_wsgi_application(preinit=default_behaviour):
 
     app = get_wsgi_application()
 
-    # Every next middeware wraps previous, so the last middeware runs first.
-    app = wsgi_middleware.LogErrors(app)
+    # Every next middleware wraps previous, so the last middleware runs first.
     app = wsgi_middleware.trace(app, 'X-Trace-ID', 'trace_id')
     app = wsgi_middleware.trace(app, 'X-Request-ID', 'request_id')
     app = wsgi_middleware.trace(app, 'X-Parent-Request-ID', 'parent_request_id', generate_on_empty=False)
