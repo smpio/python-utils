@@ -168,7 +168,8 @@ USE_TZ = False
 LOGGING = LoggingConfig()
 LOGGING.enable_handler(env('LOGGING'))
 if env('SENTRY_DSN'):
-    LOGGING.enable_handler('sentry_django')
+    LOGGING.enable_handler('sentry')
+    LOGGING.enable_handler('sentry_breadcrumb')
 if not env('SQL_LOGGING'):
     LOGGING.set_logger_level('django.db.backends', 'INFO')
 
