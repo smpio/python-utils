@@ -8,7 +8,6 @@ from django.conf import settings
 
 from utils.celery import TracingMixin, TimeClaimingMixin, TaskModuleNamingMixin
 from .mixins import PostTransactionMixin, AtomicMixin
-from .sentry import install_sentry_signals
 
 __all__ = ['Celery', 'app', 'Task', 'task']
 
@@ -37,7 +36,3 @@ task = partial(app.task, base=Task, ignore_result=True)
 
 warnings.filterwarnings('ignore', module='celery.fixups.django',
                         message=r'.*\bsettings.DEBUG\b.*')
-
-
-if getattr(settings, 'RAVEN_CONFIG', None):
-    install_sentry_signals()
