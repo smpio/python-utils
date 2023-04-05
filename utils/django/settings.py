@@ -249,3 +249,5 @@ if env('DEV_ENV'):
     else:
         smp.SmpApiClient.default_timeout = None
         smp.SmpApiClient.max_tries = 1
+
+STORAGES = {}
