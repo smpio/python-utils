@@ -225,7 +225,7 @@ class DistributedLockingRateLimiter(LockingRateLimiter):
             lock_key = f'lock:{self.name}:{key}'
         else:
             lock_key = f'lock:{self.name}'
-        lock_key = cache.make_key(lock_key)
+        lock_key = django_cache.make_key(lock_key)
         log.debug('Requesting %s time frame...', lock_key)
 
         exists_key = lock_key + ':exists'
