@@ -250,4 +250,11 @@ if env('DEV_ENV'):
         smp.SmpApiClient.default_timeout = None
         smp.SmpApiClient.max_tries = 1
 
-STORAGES = {}
+STORAGES = {
+    'default': {
+        'BACKEND': 'django.core.files.storage.FileSystemStorage',
+    },
+    'staticfiles': {
+        'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
+    },
+}
