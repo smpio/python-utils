@@ -6,7 +6,9 @@ import itertools
 import threading
 from redlock import RedLock
 from contextlib import contextmanager
-from django.core.cache import cache
+from django.core.cache import cache as django_cache
+
+from utils.redis import get_redis_connection
 
 log = logging.getLogger(__name__)
 DEFAULT_TIMEOUT = 300
@@ -15,12 +17,7 @@ long_lock_ttl = 30
 
 @contextmanager
 def get_lock(lockname, timeout=DEFAULT_TIMEOUT, retry_times=1, retry_delay=200):
-    try:
-        from django_redis import get_redis_connection
-    except ImportError:
-        raise Exception("Can't get default Redis connection")
-    else:
-        redis_client = get_redis_connection()
+    redis_client = get_redis_connection()
 
     if timeout is None:
         # redlock doesn't support infinite timeout
@@ -38,12 +35,7 @@ def get_lock(lockname, timeout=DEFAULT_TIMEOUT, retry_times=1, retry_delay=200):
 
 @contextmanager
 def get_long_lock(lockname, retry_times=1, retry_delay=200):
-    try:
-        from django_redis import get_redis_connection
-    except ImportError:
-        raise Exception("Can't get default Redis connection")
-    else:
-        redis_client = get_redis_connection()
+    redis_client = get_redis_connection()
 
     ttl = int(long_lock_ttl * 1000)
     lock = RedLock(lockname, [redis_client], retry_times=retry_times, retry_delay=retry_delay, ttl=ttl)
@@ -136,12 +128,7 @@ class DistributedRateLimiter:
 
     def __init__(self, max_rate_hz, name='', redis_client=None):
         if redis_client is None:
-            try:
-                from django_redis import get_redis_connection
-            except ImportError:
-                raise Exception("Can't get default Redis connection")
-            else:
-                redis_client = get_redis_connection()
+            redis_client = get_redis_connection()
         self._client = redis_client
         try:
             self._script = self._script_map[self._client]
@@ -211,12 +198,7 @@ class DistributedLockingRateLimiter(LockingRateLimiter):
         self.timeout = timeout
 
         if redis_client is None:
-            try:
-                from django_redis import get_redis_connection
-            except ImportError:
-                raise Exception("Can't get default Redis connection")
-            else:
-                redis_client = get_redis_connection()
+            redis_client = get_redis_connection()
         self._client = redis_client
 
     @property
@@ -234,7 +216,7 @@ class DistributedLockingRateLimiter(LockingRateLimiter):
             lock_key = f'lock:{self.name}:{key}'
         else:
             lock_key = f'lock:{self.name}'
-        lock_key = cache.make_key(lock_key)
+        lock_key = django_cache.make_key(lock_key)
         log.debug('Requesting %s time frame...', lock_key)
 
         exists_key = lock_key + ':exists'
