@@ -7,21 +7,12 @@ import threading
 from redlock import RedLock
 from contextlib import contextmanager
 from django.core.cache import cache as django_cache
-from redis import Redis
 
+from utils.redis import get_redis_connection
 
 log = logging.getLogger(__name__)
 DEFAULT_TIMEOUT = 300
 long_lock_ttl = 30
-
-
-def get_redis_connection() -> Redis:
-    try:
-        client = django_cache._cache.get_client(None, write=True)
-    except (AttributeError, IndexError, KeyError) as e:
-        raise ValueError('Unable to get Redis connection') from e
-    assert isinstance(client, Redis), 'Redis is expected as default cache backend'
-    return client
 
 
 @contextmanager
