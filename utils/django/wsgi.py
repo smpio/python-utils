@@ -20,7 +20,11 @@ def get_wsgi_application(preinit=default_behaviour):
     app = wsgi_middleware.real_ip(app)
 
     if not settings.DEBUG:
-        app = idle_counter = IdleCounter(app)
+        prometheus_metrics_address = None
+        prometheus_metrics_port = getattr(settings, 'PROMETHEUS_METRICS_PORT', None)
+        if prometheus_metrics_port:
+            prometheus_metrics_address = ('', prometheus_metrics_port)
+        app = idle_counter = IdleCounter(app, prometheus_metrics_address=prometheus_metrics_address)
         app = set_environ(app, _smp_idle_counter=idle_counter)
 
     if preinit is default_behaviour:

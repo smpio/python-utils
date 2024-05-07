@@ -4,12 +4,16 @@ import time
 import socket
 import atexit
 import typing
+import logging
 import tempfile
 import threading
 import contextlib
+import http.server
 import dataclasses
 import collections
 import socketserver
+
+log = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass
@@ -20,10 +24,13 @@ class Metrics:
 
 
 class IdleCounter:
-    def __init__(self, app, ipc_filename_prefix='wsgi_worker.'):
+    def __init__(self, app, *, ipc_filename_prefix='wsgi_worker.', prometheus_metrics_address=None):
         self.app = app
         self.ipc_filename_prefix = ipc_filename_prefix
         self.thread_status_map = collections.defaultdict(WorkerStatus)
+        if prometheus_metrics_address:
+            self.prometheus_metrics_server_thread = PrometheusMetricsHttpServerThread(self, prometheus_metrics_address)
+            self.prometheus_metrics_server_thread.start()
 
     def _init(self):
         # Can't put this in __init__, because `gunicorn --preload` will start the thread in master process before fork.
@@ -92,6 +99,7 @@ class SiblingIPCServerThread(threading.Thread):
 
         self.cleanup()
         atexit.register(self.cleanup)
+        log.info('Starting IPC server')
         with socketserver.UnixStreamServer(self.filename, Handler) as server:
             server.serve_forever()
 
@@ -102,6 +110,33 @@ class SiblingIPCServerThread(threading.Thread):
         except OSError:
             # Directory may have permissions only to create socket.
             pass
+
+
+class PrometheusMetricsHttpServerThread(threading.Thread):
+    def __init__(self, idle_counter, address=('', 8080)):
+        self.idle_counter = idle_counter
+        self.address = address
+        super().__init__(name='IdleCounter_PrometheusMetricsHttpServerThread', daemon=True)
+
+    def run(self):
+        idle_counter = self.idle_counter
+
+        class Handler(http.server.BaseHTTPRequestHandler):
+            def do_GET(self):
+                self.send_response(200)
+                self.send_header('Content-type', 'text/plain')
+                self.end_headers()
+                for metric in self.format_metrics():
+                    self.wfile.write(metric.encode('utf8'))
+
+            def format_metrics(self):
+                yield '# TYPE idle_seconds_total summary'
+                for metrics in idle_counter.read_metrics():
+                    yield f'idle_seconds_total{{pid="{metrics.pid}",tid="{metrics.tid}"}} {metrics.idle_seconds_total}'
+
+        log.info('Starting Prometheus metrics HTTP server')
+        server = http.server.ThreadingHTTPServer(self.address, Handler)
+        server.serve_forever()
 
 
 def is_socket(filename):
