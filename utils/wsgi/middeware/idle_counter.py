@@ -127,7 +127,7 @@ class PrometheusMetricsHttpServerThread(threading.Thread):
                 self.send_header('Content-type', 'text/plain')
                 self.end_headers()
                 for metric in self.format_metrics():
-                    self.wfile.write(metric.encode('utf8'))
+                    self.wfile.write(f'{metric}\n'.encode('utf8'))
 
             def format_metrics(self):
                 yield '# TYPE idle_seconds_total summary'
