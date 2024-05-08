@@ -107,5 +107,7 @@ class MetriczView(views.View):
         idle_counter = self.request.META.get('_smp_idle_counter')
         if idle_counter:
             yield '# TYPE idle_seconds_total summary'
+            yield '# TYPE busy_seconds_total summary'
             for metrics in idle_counter.read_metrics():
-                yield f'idle_seconds_total{{pid="{metrics.pid}",tid="{metrics.tid}"}} {metrics.idle_seconds_total}'
+                metric_name = f'{metrics.metric_type}_seconds_total'
+                yield f'{metric_name}{{pid="{metrics.pid}",tid="{metrics.tid}"}} {metrics.idle_seconds_total}'

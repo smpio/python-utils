@@ -18,6 +18,7 @@ log = logging.getLogger(__name__)
 
 @dataclasses.dataclass
 class Metrics:
+    metric_type: str
     pid: int
     tid: int
     idle_seconds_total: float
@@ -60,6 +61,7 @@ class IdleCounter:
 class WorkerStatus:
     def __init__(self):
         self._idle_seconds_total = 0
+        self._busy_seconds_total = 0
         self.request_started_at = self.request_ended_at = time.time()
 
     @contextlib.contextmanager
@@ -68,6 +70,7 @@ class WorkerStatus:
             self.request_started_at = time.time()
             self._idle_seconds_total += self.request_started_at - self.request_ended_at
             yield
+            self._busy_seconds_total += time.time() - self.request_started_at
         finally:
             self.request_ended_at = time.time()
 
@@ -82,6 +85,13 @@ class WorkerStatus:
         else:
             return self._idle_seconds_total + (time.time() - self.request_ended_at)
 
+    @property
+    def busy_seconds_total(self):
+        if self.in_request:
+            return self._busy_seconds_total + (time.time() - self.request_started_at)
+        else:
+            return self._busy_seconds_total
+
 
 class SiblingIPCServerThread(threading.Thread):
     def __init__(self, filename, thread_status_map):
@@ -94,7 +104,9 @@ class SiblingIPCServerThread(threading.Thread):
             def handle(handler):
                 pid = os.getpid()
                 for tid, status in self.thread_status_map.items():
-                    row = f'{pid}:{tid}:{status.idle_seconds_total}\n'
+                    row = f'idle:{pid}:{tid}:{status.idle_seconds_total}\n'
+                    handler.request.sendall(row.encode('ascii'))
+                    row = f'busy:{pid}:{tid}:{status.busy_seconds_total}\n'
                     handler.request.sendall(row.encode('ascii'))
 
         self.cleanup()
@@ -131,8 +143,10 @@ class PrometheusMetricsHttpServerThread(threading.Thread):
 
             def format_metrics(self):
                 yield '# TYPE idle_seconds_total summary'
+                yield '# TYPE busy_seconds_total summary'
                 for metrics in idle_counter.read_metrics():
-                    yield f'idle_seconds_total{{pid="{metrics.pid}",tid="{metrics.tid}"}} {metrics.idle_seconds_total}'
+                    metric_name = f'{metrics.metric_type}_seconds_total'
+                    yield f'{metric_name}{{pid="{metrics.pid}",tid="{metrics.tid}"}} {metrics.idle_seconds_total}'
 
         log.info('Starting Prometheus metrics HTTP server')
         server = http.server.ThreadingHTTPServer(self.address, Handler)
@@ -163,5 +177,5 @@ def read_worker_metrics(filename):
 
         fp = sock.makefile('r')
         for line in fp:
-            pid, tid, idle_time = line.split(':')
-            yield Metrics(int(pid), int(tid), float(idle_time))
+            metric_type, pid, tid, idle_time = line.split(':')
+            yield Metrics(metric_type, int(pid), int(tid), float(idle_time))
