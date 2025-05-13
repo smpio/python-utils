@@ -56,13 +56,15 @@ class TimeLimitPropertiesMixin:
     def effective_soft_time_limit(self):
         if self.request.called_directly:
             return None
-        return self.request.timelimit[1] or self.soft_time_limit or self.app.conf.task_soft_time_limit
+        current_timelimit = self.request.timelimit[1] if self.request.timelimit else None
+        return current_timelimit or self.soft_time_limit or self.app.conf.task_soft_time_limit
 
     @property
     def effective_hard_time_limit(self):
         if self.request.called_directly:
             return None
-        return self.request.timelimit[0] or self.time_limit or self.app.conf.task_time_limit
+        current_timelimit = self.request.timelimit[0] if self.request.timelimit else None
+        return current_timelimit or self.time_limit or self.app.conf.task_time_limit
 
     @property
     def task_cleanup_timeout(self):
@@ -84,13 +86,13 @@ class TimeLimitPropertiesMixin:
     def explicit_soft_time_limit(self):
         if self.request.called_directly:
             return None
-        return self.request.timelimit[1]
+        return self.request.timelimit[1] if self.request.timelimit else None
 
     @property
     def explicit_hard_time_limit(self):
         if self.request.called_directly:
             return None
-        return self.request.timelimit[0]
+        return self.request.timelimit[0] if self.request.timelimit else None
 
     @property
     def explicit_time_limit(self):
