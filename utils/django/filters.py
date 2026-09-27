@@ -96,6 +96,10 @@ class FilterSet(BaseFilterSet):
 class FilterBackend(DjangoFilterBackend):
     filterset_base = FilterSet
 
+    def get_schema_operation_parameters(self, view):
+        """Keep DRF's built-in OpenAPI generator compatible with django-filter."""
+        return []
+
 
 class OrderingFilter(DRFOrderingFilter):
     def get_default_ordering(self, view):

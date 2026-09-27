@@ -153,7 +153,6 @@ DEFAULT_FROM_EMAIL = 'SMP.io <noreply@smp.io>'
 ###
 TIME_ZONE = 'UTC'
 USE_I18N = False
-USE_L10N = False
 USE_TZ = False
 
 
@@ -202,7 +201,7 @@ REST_FRAMEWORK = {
         'utils.django.filters.FilterBackend',
         'utils.django.filters.OrderingFilter',
     ],
-    'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema',
+    'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.openapi.AutoSchema',
     'DEFAULT_PAGINATION_CLASS': 'utils.django.pagination.CursorPagination',
     'PAGE_SIZE': 100,
     'UNAUTHENTICATED_USER': None,
