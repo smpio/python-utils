@@ -23,7 +23,7 @@ class TypedCache:
     )
 
     def __init__(self, *prefix_parts, alias=DEFAULT_CACHE_ALIAS):
-        self.key_prefix = ':'.join(prefix_parts)
+        self.key_prefix = ':'.join(prefix_parts) + ':'
         self.alias = alias
 
     @property
