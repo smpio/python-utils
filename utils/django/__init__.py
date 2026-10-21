@@ -1,8 +1,8 @@
 import django
 from django.db import connection
 
-assert django.VERSION[:2] in ((4, 2), ), \
-    f'Incompatible Django version: 4.2.* expected, got {".".join(map(str, django.VERSION))}'
+assert (4, 2) <= django.VERSION[:2] <= (6, 1), \
+    f'Unsupported Django version: {django.get_version()}'
 
 
 def estimate_count(model_class):
