@@ -31,3 +31,18 @@ Many settings can be set using env vars. There are "super" vars that modify defa
     * ...
   * `CONTAINER_ENV == False`
     * ...
+
+## Raven shutdown budget
+
+`utils.sentry.ConfigurableThreadedHTTPTransport` keeps Raven HTTP delivery
+asynchronous and accepts `shutdown_timeout` in seconds (default: `10`). A value
+of `0` disables waiting for queued events at process exit. Pending events may
+then be lost, including when a Gunicorn or Celery worker exits normally.
+Fractional values are supported. The HTTP request `timeout` remains a separate
+transport option.
+
+SMP Django base configures this transport from `SENTRY_SHUTDOWN_TIMEOUT`.
+Other Raven clients can pass the class or a `functools.partial` with an explicit
+`shutdown_timeout` as their `transport` option.
+
+Transport regression tests: `python3 tests/test_sentry_transport.py`.
