@@ -15,6 +15,10 @@ DEFAULT_TIMEOUT = 300
 long_lock_ttl = 30
 
 
+class RateLimitWaitTimeout(TimeoutError):
+    """No rate-limit permit was acquired; the request must not run."""
+
+
 @contextmanager
 def get_lock(lockname, timeout=DEFAULT_TIMEOUT, retry_times=1, retry_delay=200):
     redis_client = get_redis_connection()
@@ -235,25 +239,27 @@ class DistributedLockingRateLimiter(LockingRateLimiter):
             ready_time = float(blpop_result[1])
         else:
             log.debug('Timeout hit')
-            ready_time = 0
+            # Failing open creates an extra permit in finally and permanently
+            # breaks serialization for every subsequent caller of this key.
+            raise RateLimitWaitTimeout('Timed out waiting for a rate-limit permit')
 
-        if ready_time:
-            log.debug('Next free time frame will be at %s', ready_time)
-        else:
-            log.debug('Next free time frame is NOW')
-
-        redis_time = self.get_current_redis_time()
-        log.debug('Current redis time: %s', redis_time)
-
-        delay = ready_time - redis_time
-        if delay > 0:
-            log.debug('Rate limit hit! Sleeping for %s seconds', delay)
-            time.sleep(delay)
-        else:
-            log.debug('Continue without delay')
-
-        log.debug('Running job in time frame %s...', lock_key)
         try:
+            if ready_time:
+                log.debug('Next free time frame will be at %s', ready_time)
+            else:
+                log.debug('Next free time frame is NOW')
+
+            redis_time = self.get_current_redis_time()
+            log.debug('Current redis time: %s', redis_time)
+
+            delay = ready_time - redis_time
+            if delay > 0:
+                log.debug('Rate limit hit! Sleeping for %s seconds', delay)
+                time.sleep(delay)
+            else:
+                log.debug('Continue without delay')
+
+            log.debug('Running job in time frame %s...', lock_key)
             yield
         finally:
             log.debug('Job finished in time frame %s', lock_key)
