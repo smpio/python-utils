@@ -1,6 +1,6 @@
 import contextlib
 
-from utils.lock import DistributedLockingRateLimiter
+from utils.lock import DistributedLockingRateLimiter, RateLimitWaitTimeout
 
 
 class RateLimitMixin:
@@ -14,7 +14,10 @@ class RateLimitMixin:
                          for rate_hz, limiter_name in self.rate_limits)
         ctx_managers = (limiter.get_time_frame() for limiter in rate_limiters)
 
-        with contextlib.ExitStack() as stack:
-            for ctx in ctx_managers:
-                stack.enter_context(ctx)
-            return super()._request_once(*args, **kwargs)
+        try:
+            with contextlib.ExitStack() as stack:
+                for ctx in ctx_managers:
+                    stack.enter_context(ctx)
+                return super()._request_once(*args, **kwargs)
+        except RateLimitWaitTimeout as exc:
+            raise self.ServerError(level='rate_limit', reason=exc, has_side_effects=False) from exc
