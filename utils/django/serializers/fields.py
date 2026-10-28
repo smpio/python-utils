@@ -1,5 +1,9 @@
+import datetime
+
+from django.utils import timezone
 from rest_framework.serializers import CharField
 from rest_framework.serializers import ChoiceField
+from rest_framework.serializers import DateTimeField
 
 
 class ChoiceDisplayField(ChoiceField):
@@ -62,3 +66,25 @@ class EnumField(ChoiceDisplayField):
         self._enum_class = enum_class
         choices = [(i, i.name) for i in self._enum_class]
         super().__init__(choices=choices, **kwargs)
+
+
+class UTCDateTimeField(DateTimeField):
+    """
+    Serializer field for ISO-8601 datetime with an explicit UTC designator ("Z").
+
+    Services run with "USE_TZ = False", so the database keeps naive UTC and the
+    stock DateTimeField renders the value without an offset. A browser reads such
+    a string as local time and shifts the moment by the client's offset. The
+    stored value is already UTC: this field only marks it as such.
+
+    Input handling is inherited unchanged: a value with an offset is accepted,
+    a value without one is still treated as UTC.
+    """
+    def to_representation(self, value):
+        if value is None or value == '':
+            return None
+        if isinstance(value, str):
+            return value
+        if timezone.is_naive(value):
+            value = value.replace(tzinfo=datetime.timezone.utc)
+        return value.astimezone(datetime.timezone.utc).isoformat().replace('+00:00', 'Z')
