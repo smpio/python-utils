@@ -1,6 +1,7 @@
 # TODO: refactor, remove django dependency
 
 import time
+import math
 import logging
 import itertools
 import threading
@@ -16,7 +17,7 @@ long_lock_ttl = 30
 
 
 class RateLimitWaitTimeout(TimeoutError):
-    """No rate-limit permit was acquired; the request must not run."""
+    """No rate-limit permit was acquired in the allowed time; the request must not run."""
 
 
 @contextmanager
@@ -179,13 +180,13 @@ class LockingRateLimiter:
         self.name = name
 
     @contextmanager
-    def get_time_frame(self, key=None):
+    def get_time_frame(self, key=None, max_wait=None):
         raise NotImplementedError
 
 
 class FakeLockingRateLimiter(LockingRateLimiter):
     @contextmanager
-    def get_time_frame(self, key=None):
+    def get_time_frame(self, key=None, max_wait=None):
         yield
 
 
@@ -215,34 +216,16 @@ class DistributedLockingRateLimiter(LockingRateLimiter):
         self._min_delay = 1.0 / float(value)
 
     @contextmanager
-    def get_time_frame(self, key=None):
-        if key:
-            lock_key = f'lock:{self.name}:{key}'
-        else:
-            lock_key = f'lock:{self.name}'
-        lock_key = django_cache.make_key(lock_key)
+    def get_time_frame(self, key=None, max_wait=None):
+        lock_key = self._lock_key(key)
         log.debug('Requesting %s time frame...', lock_key)
 
-        exists_key = lock_key + ':exists'
-        exists = self._client.getset(exists_key, 1)
-        if self.timeout is not None:
-            self._client.expire(exists_key, self.timeout)
+        exists_key = self._init_queue(lock_key)
 
-        if exists is None:
-            log.debug('Lock does not exist, initialize it')
-            self._client.rpush(lock_key, 0)
-        else:
-            log.debug('Lock already exists, waiting for it')
+        ready_time, raw_permit = self._acquire_permit(lock_key, max_wait)
 
-        blpop_result = self._client.blpop(lock_key, self.timeout)
-        if blpop_result is not None:
-            ready_time = float(blpop_result[1])
-        else:
-            log.debug('Timeout hit')
-            # Failing open creates an extra permit in finally and permanently
-            # breaks serialization for every subsequent caller of this key.
-            raise RateLimitWaitTimeout('Timed out waiting for a rate-limit permit')
-
+        # Set when the acquired permit is handed back, so finally does not issue a new one.
+        permit_returned = False
         try:
             if ready_time:
                 log.debug('Next free time frame will be at %s', ready_time)
@@ -253,6 +236,16 @@ class DistributedLockingRateLimiter(LockingRateLimiter):
             log.debug('Current redis time: %s', redis_time)
 
             delay = ready_time - redis_time
+            if max_wait is not None and delay > max_wait:
+                # The head of the queue turned out to be further ahead than advertised
+                # (another caller pushed a later slot in between). Keep the permit.
+                log.debug('Refusing to wait %s seconds for %s', delay, lock_key)
+                self._client.lpush(lock_key, raw_permit)
+                permit_returned = True
+                raise RateLimitWaitTimeout(
+                    f'The acquired permit for {lock_key} is {delay:.1f}s away, max wait is {max_wait:.1f}s'
+                )
+
             if delay > 0:
                 log.debug('Rate limit hit! Sleeping for %s seconds', delay)
                 time.sleep(delay)
@@ -262,18 +255,67 @@ class DistributedLockingRateLimiter(LockingRateLimiter):
             log.debug('Running job in time frame %s...', lock_key)
             yield
         finally:
-            log.debug('Job finished in time frame %s', lock_key)
+            if not permit_returned:
+                self._release_permit(lock_key, exists_key)
 
-            redis_time = self.get_current_redis_time()
-            log.debug('Current redis time: %s', redis_time)
+    def _lock_key(self, key):
+        lock_key = f'lock:{self.name}:{key}' if key else f'lock:{self.name}'
+        return django_cache.make_key(lock_key)
 
-            ready_time = redis_time + self._min_delay
-            log.debug('Next free time frame will be at %s', ready_time)
+    def _init_queue(self, lock_key):
+        exists_key = lock_key + ':exists'
+        exists = self._client.getset(exists_key, 1)
+        if self.timeout is not None:
+            self._client.expire(exists_key, self.timeout)
 
-            self._client.set(exists_key, 1, ex=self.timeout)
-            self._client.rpush(lock_key, str(ready_time))
-            if self.timeout is not None:
-                self._client.expire(lock_key, self.timeout)
+        if exists is None:
+            log.debug('Lock does not exist, initialize it')
+            self._client.rpush(lock_key, 0)
+        else:
+            log.debug('Lock already exists, waiting for it')
+        return exists_key
+
+    def _acquire_permit(self, lock_key, max_wait):
+        blpop_timeout = self.timeout
+        if max_wait is not None:
+            # The queue head is the next permit to be issued. Refuse it before blocking
+            # instead of parking the worker for a permit that is too far ahead.
+            pending = self._client.lindex(lock_key, 0)
+            if pending is not None:
+                wait_ahead = self._permit_delay(pending)
+                if wait_ahead > max_wait:
+                    log.debug('Next permit for %s is %.1fs away, max wait is %.1fs', lock_key, wait_ahead, max_wait)
+                    raise RateLimitWaitTimeout(
+                        f'The next permit for {lock_key} is {wait_ahead:.1f}s away, max wait is {max_wait:.1f}s'
+                    )
+            # BLPOP accepts fractional timeouts since Redis 6, round up for older servers.
+            bounded_timeout = int(math.ceil(max_wait))
+            blpop_timeout = bounded_timeout if self.timeout is None else min(self.timeout, bounded_timeout)
+
+        blpop_result = self._client.blpop(lock_key, blpop_timeout)
+        if blpop_result is None:
+            log.debug('Timeout hit')
+            # Failing open creates an extra permit in finally and permanently
+            # breaks serialization for every subsequent caller of this key.
+            raise RateLimitWaitTimeout('Timed out waiting for a rate-limit permit')
+        return float(blpop_result[1]), blpop_result[1]
+
+    def _release_permit(self, lock_key, exists_key):
+        log.debug('Job finished in time frame %s', lock_key)
+
+        redis_time = self.get_current_redis_time()
+        log.debug('Current redis time: %s', redis_time)
+
+        ready_time = redis_time + self._min_delay
+        log.debug('Next free time frame will be at %s', ready_time)
+
+        self._client.set(exists_key, 1, ex=self.timeout)
+        self._client.rpush(lock_key, str(ready_time))
+        if self.timeout is not None:
+            self._client.expire(lock_key, self.timeout)
+
+    def _permit_delay(self, ready_time) -> float:
+        return float(ready_time) - self.get_current_redis_time()
 
     def get_current_redis_time(self):
         return float('%d.%06d' % self._client.time())
