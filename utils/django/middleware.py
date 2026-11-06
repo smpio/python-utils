@@ -3,6 +3,7 @@ import json
 import urllib.parse
 
 from django.core.exceptions import RequestDataTooBig
+from django.utils.encoding import escape_uri_path
 
 log = logging.getLogger(__name__)
 
@@ -22,7 +23,7 @@ def add_trace_id_response_header(get_response):
 
 class LogRequestMiddleware:
     _sanitized_value = '***'
-    _sanitizeable_keys = {'password', 'token', }
+    _sanitizeable_keys = {'password', 'token', 'username', 'access_token', 'refresh_token'}
 
     def __init__(self, get_response):
         self.get_response = get_response
@@ -45,11 +46,13 @@ class LogRequestMiddleware:
             body = '(too big)'
         except Exception:
             log.exception('Failed to parse request body')
+            body = '(failed to parse request body)'
 
+        full_path = self.get_sanitized_full_path(request)
         if body:
-            log.debug('%s %s [%s] %s', request.method, request.get_full_path(), request.content_type, body)
+            log.debug('%s %s [%s] %s', request.method, full_path, request.content_type, body)
         else:
-            log.debug('%s %s', request.method, request.get_full_path())
+            log.debug('%s %s', request.method, full_path)
 
         return self.get_response(request)
 
@@ -57,17 +60,20 @@ class LogRequestMiddleware:
         return ctype in self._sanitize_funcs_by_ctype_map or ctype.startswith('text/')
 
     def sanitize(self, body, content_type):
+        sanitize_func = self._sanitize_funcs_by_ctype_map.get(content_type)
+        if sanitize_func:
+            return sanitize_func(body)
+        return body
+
+    def get_sanitized_full_path(self, request):
         # noinspection PyBroadException
         try:
-            sanitize_func = self._sanitize_funcs_by_ctype_map.get(content_type)
-            if not sanitize_func:
-                return body
-            for sanitizeable_key in self._sanitizeable_keys:
-                if sanitizeable_key in body:
-                    return sanitize_func(body)
+            query = self._sanitize_dict_deep(request.GET.copy()).urlencode()
         except Exception:
-            log.exception('Failed to sanitize request body')
-        return body
+            log.exception('Failed to sanitize query params')
+            query = '(failed to sanitize query params)'
+        path = escape_uri_path(request.path)
+        return f'{path}?{query}' if query else path
 
     def _sanitize_json(self, body):
         data = json.loads(body)
@@ -76,17 +82,23 @@ class LogRequestMiddleware:
         return body_sanitized
 
     def _sanitize_x_www_form_urlencoded(self, body):
-        data = dict(urllib.parse.parse_qsl(body))
-        data_sanitized = self._sanitize_dict_deep(data)
+        data = urllib.parse.parse_qsl(body, keep_blank_values=True)
+        data_sanitized = [
+            (key, self._sanitized_value if key.lower() in self._sanitizeable_keys else value)
+            for key, value in data
+        ]
         body_sanitized = urllib.parse.urlencode(data_sanitized)
         return body_sanitized
 
     def _sanitize_dict_deep(self, data):
+        if isinstance(data, list):
+            return [self._sanitize_dict_deep(value) for value in data]
+        if not isinstance(data, dict):
+            return data
         for k in data:
-            if k in self._sanitizeable_keys:
+            if k.lower() in self._sanitizeable_keys:
                 data[k] = self._sanitized_value
                 continue
-            v = data[k]
-            if isinstance(v, dict):
-                data[k] = self._sanitize_dict_deep(v)
+            if isinstance(data[k], (dict, list)):
+                data[k] = self._sanitize_dict_deep(data[k])
         return data
