@@ -1,6 +1,5 @@
 import json
 
-import coreapi
 from rest_framework import status
 from rest_framework.renderers import BaseRenderer, JSONRenderer as DRFJSONRenderer
 
@@ -25,6 +24,7 @@ class OpenAPIRenderer(BaseRenderer):
 
     def render(self, data, media_type=None, renderer_context=None):
         # See OpenAPICodec.encode
+        import coreapi
         from openapi_codec.encode import generate_swagger_object
 
         if not isinstance(data, coreapi.Document):
