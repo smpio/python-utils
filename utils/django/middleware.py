@@ -23,7 +23,9 @@ def add_trace_id_response_header(get_response):
 
 class LogRequestMiddleware:
     _sanitized_value = '***'
-    _sanitizeable_keys = {'password', 'token', 'username', 'access_token', 'refresh_token'}
+    _sanitizeable_keys = {
+        'password', 'token', 'username', 'access_token', 'refresh_token', 'secret', 'client_secret',
+    }
 
     def __init__(self, get_response):
         self.get_response = get_response
