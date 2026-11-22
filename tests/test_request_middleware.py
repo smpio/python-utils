@@ -123,6 +123,41 @@ class LogRequestMiddlewareTests(unittest.TestCase):
         request = self.factory.generic('POST', '/', b'', content_type='application/json')
         self.assertEqual(self.log_request(request), 'POST /')
 
+    def test_nested_application_secret_is_masked_without_changing_body(self):
+        data = {'credential': {'data': {'access_token': 'private-access'},
+                               'app': {'credential': {'key': 'public-client', 'secret': 'private-app'}}}}
+        body = json.dumps(data)
+        request = self.factory.generic('POST', '/', body, content_type='application/json')
+        message = self.log_request(request)
+        self.assertNotIn('private-access', message)
+        self.assertNotIn('private-app', message)
+        self.assertIn('public-client', message)
+        self.assertEqual(request.body.decode(), body)
+
+    def test_client_secrets_in_json_lists_and_mixed_case_keys_are_masked(self):
+        body = json.dumps({'clients': [{'CLIENT_SECRET': 'private-one'}, {'SeCrEt': 'private-two'}]})
+        request = self.factory.generic('POST', '/', body, content_type='application/json')
+        self.assertNotIn('private-', self.log_request(request))
+        self.assertEqual(request.body.decode(), body)
+
+    def test_application_secrets_in_repeated_and_encoded_query_keys_are_masked(self):
+        query = 'sec%72et=private-one&CLIENT_SECRET=private-two&secret=private-three&tag=public'
+        request = self.factory.get('/?' + query)
+        original = list(request.GET.lists())
+        message = self.log_request(request)
+        self.assertNotIn('private-', message)
+        self.assertIn('tag=public', message)
+        self.assertEqual(list(request.GET.lists()), original)
+        self.assertEqual(request.META['QUERY_STRING'], query)
+
+    def test_application_secrets_in_forms_are_masked_without_changing_body(self):
+        body = 'sec%72et=private-one&CLIENT_SECRET=private-two&secret=private-three&tag=public'
+        request = self.factory.generic('POST', '/', body, content_type='application/x-www-form-urlencoded')
+        message = self.log_request(request)
+        self.assertNotIn('private-', message)
+        self.assertIn('tag=public', message)
+        self.assertEqual(request.body.decode(), body)
+
     def test_plain_text_logging_is_unchanged(self):
         request = self.factory.generic('POST', '/', 'plain text', content_type='text/plain')
         self.assertEqual(self.log_request(request), 'POST / [text/plain] plain text')
